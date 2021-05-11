@@ -45,7 +45,7 @@ est_null_model <- function(fit,
                            data,
                            tr_var="treat",
                            null_par){
-  if(!(is(fit,"glmer")|is(fit,"lmer")))stop("fit should be glmer or lmer model object")
+  if(!(is(fit,"glmerMod")|is(fit,"lmerMod")))stop("fit should be glmer or lmer model object")
   if(!is(data,"data.frame"))stop("Data should be a data frame")
   if(!tr_var%in%colnames(data))stop("tr_var not in colnames(data)")
 
@@ -70,14 +70,14 @@ est_null_model <- function(fit,
 
   off1 <- c(data[,tr_var]*null_par)
 
-  if(call1 == "glmer"){
+  if(is(fit,"glmerMod")){
     family <- fit@call[[4]]
     if(all(off1==0)){
       f1 <- glm(form,data,family=family)
     } else {
       f1 <- do.call("glm",list(formula=form,data=data,family=family,offset=off1))
     }
-  } else if(call1=="lmer"){
+  } else if(is(fit,"lmerMod")){
     data[,outv] <- data[,outv]-off1
     f1 <- do.call("lm",list(formula=form,data=data))
   }

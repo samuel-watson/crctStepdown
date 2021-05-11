@@ -42,8 +42,8 @@ conf_int_search <- function(fitlist,
                             rand_func = NULL,
                             verbose=TRUE){
   if(!is(fitlist,"list"))stop("fitlist should be a list.")
-  if(!all(unlist(lapply(tmp,function(x)I(is(x,"glmer")|is(x,"lmer"))))))stop("All elements of fitlist should be lme4 model objects")
-  p <- length(tmp)
+  if(!all(unlist(lapply(fitlist,function(x)I(is(x,"glmerMod")|is(x,"lmerMod"))))))stop("All elements of fitlist should be lme4 model objects")
+  p <- length(fitlist)
   if(length(actual_tr)!=p)stop("length(actual_tr)!=length(fitlist)")
   if(length(start)!=p)stop("length(actual_tr)!=length(fitlist)")
 

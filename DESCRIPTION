@@ -7,7 +7,9 @@ Authors@R:
            role = c("aut", "cre"),
            email = "s.i.watson@bham.ac.uk",
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+Description: Frequentist statistical inference for cluster randomised trials with
+  multiple outcomes that controls the family-wise error rate and provides nominal
+  coverage of confidence sets.
 License: CC BY-SA 4.0 
 Encoding: UTF-8
 LazyData: true
@@ -16,7 +18,10 @@ RoxygenNote: 7.1.1
 Imports:
   pbapply,
   ggplot2,
-  ggpubr
+  ggpubr,
+  methods,
+  stringr,
+  lme4
 Depends: 
     R (>= 2.10)
 Suggests: 

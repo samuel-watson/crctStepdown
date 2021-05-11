@@ -20,6 +20,9 @@ permute(
 
 \item{n_permute}{Number of permutations to conduct}
 
+\item{null_pars}{A vector of the same length as fitlist specifying the value(s) of the
+treatment effect parameter(s) under the null hypotheses}
+
 \item{cl_var}{String specifying the name of the column identifying the clusters/cluster-time}
 
 \item{rand_func}{The name of a function that re-randomises the clusters. The function should
@@ -27,9 +30,6 @@ produce a data frame that identifies the clusters in the treatment group under t
 randomisation scheme. The data frame can either have a single column with name cl_var or
 two columns of cl_var and t identifying the cluster ID and time period a cluster joins
 the treatment group.  If NULL then clusters are randomised in a 1:1 ratio to treatment and control}
-
-\item{null_par}{A vector of the same length as fitlist specifying the value(s) of the
-treatment effect parameter(s) under the null hypotheses}
 }
 \value{
 An array of dimension length(fitlist)*n_permute containing the test statistics

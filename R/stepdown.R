@@ -60,7 +60,7 @@ stepdown <- function(fitlist,
   if(!is(data,"data.frame"))stop("Data should be a data frame")
   if(!tr_var%in%colnames(data))stop("tr_var not in colnames(data)")
   if(!cl_var%in%colnames(data))stop("cl_var not in colnames(data)")
-  if(!all(unlist(lapply(tmp,function(x)I(is(x,"glmer")|is(x,"lmer"))))))stop("All elements of fitlist should be lme4 model objects")
+  if(!all(unlist(lapply(fitlist,function(x)I(is(x,"glmerMod")|is(x,"lmerMod"))))))stop("All elements of fitlist should be lme4 model objects")
   if(alpha<=0|alpha>=1)stop("alpha should be between 0 and 1")
 
   if(verbose)cat("Extracting treatment effect estimates.\n")
@@ -142,7 +142,6 @@ stepdown <- function(fitlist,
                                 start=tr_eff+2.5*tr_sd,
                                 nsteps=nsteps,
                                 alpha=alpha/2,
-                                t_sd = ts_sd,
                                 plots = plots,
                                 cl_var = cl_var,
                                 rand_func=rand_func,
@@ -155,7 +154,6 @@ stepdown <- function(fitlist,
                                 start=tr_eff-2.5*tr_sd,
                                 nsteps=nsteps,
                                 alpha=alpha/2,
-                                t_sd = ts_sd,
                                 plots=plots,
                                 cl_var = cl_var,
                                 rand_func=rand_func,

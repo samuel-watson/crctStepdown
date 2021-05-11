@@ -7,7 +7,7 @@
 outname_fit(fit)
 }
 \arguments{
-\item{fit}{A fitted model object of class glm, lm, or mer}
+\item{fit}{A fitted model object of class glm, lm, or *merMod}
 }
 \value{
 A string with the name of the dependent variable from the model

@@ -68,7 +68,7 @@ lme_permute2 <- function(fitlist,
 #' @param fitlist A list of glm model objects fitted under the null hypotheses
 #' @param data A data frame containing the data used to fit the models in fitlist
 #' @param n_permute Number of permutations to conduct
-#' @param null_par A vector of the same length as fitlist specifying the value(s) of the
+#' @param null_pars A vector of the same length as fitlist specifying the value(s) of the
 #' treatment effect parameter(s) under the null hypotheses
 #' @param cl_var String specifying the name of the column identifying the clusters/cluster-time
 #' @param rand_func The name of a function that re-randomises the clusters. The function should
@@ -85,7 +85,7 @@ permute <- function(fitlist,
                     cl_var = "cl",
                     rand_func=NULL){
   if(!cl_var%in%colnames(data))stop("cl_var not in colnames(data)")
-  if(!require(pbapply)){
+  if(!requireNamespace("pbapply")){
     warning("No running time feedback as pbapply not installed.")
     res <- replicate(n_permute,lme_permute2(fitlist,
                                                        data,
@@ -105,11 +105,11 @@ permute <- function(fitlist,
 
 #' Extracts the dependent variable name from glm, lm, or mer model
 #'
-#' @param fit A fitted model object of class glm, lm, or mer
+#' @param fit A fitted model object of class glm, lm, or *merMod
 #' @return A string with the name of the dependent variable from the model
 #' @export
 outname_fit <- function(fit){
-  if(!is(fit,"glm")|!is(fit,"lm")|!(is(fit,"glmer")|is(fit,"lmer")))
+  if(!(is(fit,"glm")|!is(fit,"lm")|is(fit,"glmerMod")|is(fit,"lmerMod")))
     stop("Model class should be glm, lm, or mer")
 
   formu <- class(fit)[1]
