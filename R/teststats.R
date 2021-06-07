@@ -1,30 +1,3 @@
-#' Inverse logit link function
-#'
-#' Inverse logit link function exp(x)/(1+exp(x))
-#' @param x Numerical value
-#' @export
-h_logit <- function(x){
-  return(exp(x)/(1+exp(x)))
-}
-
-#' Poisson exponential link function
-#'
-#' Exponential function
-#' @param x Numerical value
-#' @export
-h_pois <- function(x){
-  return(exp(x))
-}
-
-#' Identity link function
-#'
-#' Identity function
-#' @param x Numerical value
-#' @export
-h_norm <- function(x){
-  return(x)
-}
-
 #' Estimates null model
 #'
 #' Given an lme4 model object and the value of the treatment effect parameter under the
@@ -49,15 +22,13 @@ est_null_model <- function(fit,
   if(!is(data,"data.frame"))stop("Data should be a data frame")
   if(!tr_var%in%colnames(data))stop("tr_var not in colnames(data)")
 
-  s1 <- summary(fit)
-  fixeff <- rownames(s1$coefficients)
+  fixeff <- names(fixef(fit))#rownames(s1$coefficients)
   fixeff <- fixeff[!fixeff%in%c(tr_var,"(Intercept)")]
   outv <- outname_fit(fit)
   call1 <- fit@call[[1]]
 
   if(length(fixeff)==0){
     form <- paste0(outv," ~ 1")
-    #environment(form) <- environment()
   }
   if(length(fixeff)==1){
     form <- paste0(outv," ~ ",fixeff)
@@ -70,17 +41,27 @@ est_null_model <- function(fit,
 
   off1 <- c(data[,tr_var]*null_par)
 
-  if(is(fit,"glmerMod")){
+  X <- model.matrix(object=as.formula(form),data)
+  Y <- data[!is.na(data[,outv]),outv]
+
+  if(call1 == "glmer"){
     family <- fit@call[[4]]
     if(all(off1==0)){
-      f1 <- glm(form,data,family=family)
+      f1 <- fastglm(X,Y,family=family,method=3)
     } else {
-      f1 <- do.call("glm",list(formula=form,data=data,family=family,offset=off1))
+      f1 <- do.call("fastglm",list(X,
+                                   Y,
+                                   family=family,
+                                   offset=off1,
+                                   method=3))
     }
-  } else if(is(fit,"lmerMod")){
+  } else if(call1=="lmer"){
+
     data[,outv] <- data[,outv]-off1
-    f1 <- do.call("lm",list(formula=form,data=data))
+    f1 <- do.call("fastLm",list(X=X,y=Y))
   }
+
+  f1$outv <- outv
 
   return(f1)
 }
@@ -107,7 +88,7 @@ qscore_stat <- function(fit,
                         tr_var = "treat",
                         cl_var="cl",
                         tr_assign="treat"){
-  if(!(is(fit,"glm")|is(fit,"lm")))stop("fit should be a glm or lm model")
+  #if(!(is(fit,"glm")|is(fit,"lm")))stop("fit should be a glm or lm model")
   if(!is(data,"data.frame"))stop("Data should be a data frame")
   if(!tr_var%in%colnames(data))stop("tr_var not in colnames(data)")
   if(!cl_var%in%colnames(data))stop("cl_var not in colnames(data)")
@@ -116,31 +97,38 @@ qscore_stat <- function(fit,
   df[,tr_var] <- 0
   outv <- outname_fit(fit)
   if(class(fit)[1] == "glm"){
-    pr1 <- predict(fit,data,type="link")
+    pr1 <- predict.glm(fit,data,type="response")
+  } else if(is(fit,"fastglm")|is(fit,"fastLm")){
+    pr1 <- fit$fitted.values
   } else {
-    pr1 <- predict(fit,data)
-    pr1 <- pr1 + null_par*data[,tr_var]
-  }
-  s1 <- summary(fit)
-  call1 <- fit$call[[1]]#fit@call[[1]]
-  #family <- nullfitlist[[1]]$family[[1]]
-  if(call1=="glm"){
-    family <- fit$family[[1]]#fit@call[[4]]
-    if(family=="poisson"){
-      f2 <- "h_pois"
-    }
-    if(family=="binomial"){
-      f2 <- "h_logit"
-    }
-  } else {
-    f2 <- "h_norm"
+    pr1 <- predict.lm(fit,data)
   }
 
-  pr2 <- do.call(f2,list(pr1))
-  resid <- matrix(data[,outv]-pr2,ncol=1)
-  Tval <- ifelse(data[,tr_assign]==1,1,-1)
-  score <- sum(Tval*resid, na.rm = TRUE)
-  aggscore <- aggregate(Tval*resid,list(data[,cl_var]),sum, na.rm=TRUE)
-  scoresq <- sum(aggscore$V1^2, na.rm = TRUE)
-  return(score/sqrt(scoresq))
+  if(is(fit,"fastLm")|is(fit,"lm")){
+    pr1 <- pr1 + null_par*data[!is.na(data[,outv]),tr_var]
+  }
+
+  #s1 <- summary(fit)
+  #call1 <- fit$call[[1]]#fit@call[[1]]
+  #family <- nullfitlist[[1]]$family[[1]]
+  # if(grepl("glm",call1)){
+  #   family <- fit$family[[1]]#fit@call[[4]]
+  #   if(family=="poisson"){
+  #     f2 <- "h_pois"
+  #   }
+  #   if(family=="binomial"){
+  #     f2 <- "h_logit"
+  #   }
+  # } else {
+  #   f2 <- "h_norm"
+  # }
+
+  cltmp <- as.numeric(as.factor(data[,cl_var]))-1
+
+  sc <- qscore(y=data[!is.na(data[,outv]),outv],
+               x=pr1,
+               T=data[!is.na(data[,outv]),tr_assign],
+               cl=cltmp,
+               ncl=length(unique(cltmp)))
+  return(sc)
 }

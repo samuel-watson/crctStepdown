@@ -85,20 +85,11 @@ permute <- function(fitlist,
                     cl_var = "cl",
                     rand_func=NULL){
   if(!cl_var%in%colnames(data))stop("cl_var not in colnames(data)")
-  if(!requireNamespace("pbapply")){
-    warning("No running time feedback as pbapply not installed.")
-    res <- replicate(n_permute,lme_permute2(fitlist,
-                                                       data,
-                                                       null_par = null_pars,
-                                                       cl_var=cl_var,
-                                                       rand_func = rand_func))
-  } else {
-    res <- pbapply::pbreplicate(n_permute,lme_permute2(fitlist,
-                                                       data,
-                                                       null_par = null_pars,
-                                                       cl_var=cl_var,
-                                                       rand_func = rand_func))
-  }
+  res <- replicate(n_permute,lme_permute2(fitlist,
+                                          data,
+                                          null_par = null_pars,
+                                          cl_var=cl_var,
+                                          rand_func = rand_func))
 
   return(res)
 }
@@ -112,13 +103,14 @@ outname_fit <- function(fit){
   if(!(is(fit,"glm")|!is(fit,"lm")|is(fit,"glmerMod")|is(fit,"lmerMod")))
     stop("Model class should be glm, lm, or mer")
 
-  formu <- class(fit)[1]
-  if(formu=="glm"){
+  if(is(fit,"glm")){
     outv <- strsplit(as.character(fit$formula), " ")[[1]][1]
-  } else if(formu=="lm"){
+  } else if(is(fit,"lm")){
     outv <- strsplit(as.character(fit$call[[2]])," ")[[1]][1]
-  } else if(grepl("mer",formu)){
+  } else if(grepl("mer",class(fit))){
     outv <- strsplit(as.character(fit@call[[2]])," ")[[2]]
+  } else if(is(fit,"fastglm")|is(fit,"fastLm")){
+    outv <- fit$outv
   }
   return(outv)
 }
