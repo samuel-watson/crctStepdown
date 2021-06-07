@@ -21,6 +21,7 @@ Imports:
   fastglm,
   Rcpp,
   RcppArmadillo,
+  rlang,
   ggplot2,
   ggpubr,
   methods,

@@ -19,6 +19,3 @@ Function to generate a stepped-wedge cRCT randomisation allocation. Assumes a ba
 and endline period in which no clusters and all clusters have the intervention,
 respectively.
 }
-\examples{
-
-}
