@@ -30,6 +30,9 @@
 #' the treatment group.  If NULL then clusters are randomised in a 1:1 ratio to treatment and control
 #' @param verbose Logical indicating whether to provide verbose output showing progress and estimates
 #' @return A vector of length p with the estimates of the limits
+#' @importFrom methods is
+#' @importFrom ggplot2 aes
+#' @importFrom rlang .data
 #' @export
 conf_int_search <- function(fitlist,
                             data,
@@ -105,9 +108,9 @@ conf_int_search <- function(fitlist,
     dfv <- data.frame(step=rep(1:nsteps,length(actual_tr)),
                       par=rep(1:length(actual_tr),each=nsteps),
                       value=c(dfv))
-    p1 <- ggplot2::ggplot(data=dfv,aes(x=step,y=value))+
+    p1 <- ggplot2::ggplot(data=dfv,aes(x=.data$step,y=.data$value))+
       ggplot2::geom_line()+
-      ggplot2::facet_wrap(~par, scales = "free_y")
+      ggplot2::facet_wrap(~.data$par, scales = "free_y")
     print(p1)
   }
 

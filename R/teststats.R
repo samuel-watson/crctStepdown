@@ -13,6 +13,8 @@
 #' for whether the observation was under the treatment (1=treatment, 0=control)
 #' @param null_par Numeric the value of tr_var parameter under the null hypothesis
 #' @return An lm or glm model fit under the null model
+#' @importFrom methods is
+#' @importFrom stats model.matrix as.formula
 #' @export
 est_null_model <- function(fit,
                            data,
@@ -22,10 +24,10 @@ est_null_model <- function(fit,
   if(!is(data,"data.frame"))stop("Data should be a data frame")
   if(!tr_var%in%colnames(data))stop("tr_var not in colnames(data)")
 
-  fixeff <- names(fixef(fit))#rownames(s1$coefficients)
+  fixeff <- names(lme4::fixef(fit))#rownames(s1$coefficients)
   fixeff <- fixeff[!fixeff%in%c(tr_var,"(Intercept)")]
   outv <- outname_fit(fit)
-  call1 <- fit@call[[1]]
+  #call1 <- fit@call[[1]]
 
   if(length(fixeff)==0){
     form <- paste0(outv," ~ 1")
@@ -44,21 +46,16 @@ est_null_model <- function(fit,
   X <- model.matrix(object=as.formula(form),data)
   Y <- data[!is.na(data[,outv]),outv]
 
-  if(call1 == "glmer"){
+  if(is(fit,"glmerMod")){
     family <- fit@call[[4]]
     if(all(off1==0)){
-      f1 <- fastglm(X,Y,family=family,method=3)
+      f1 <- fastglm::fastglm(X,Y,family=family,method=3)
     } else {
-      f1 <- do.call("fastglm",list(X,
-                                   Y,
-                                   family=family,
-                                   offset=off1,
-                                   method=3))
+      f1 <- fastglm::fastglm(X,Y,family=family,offset=off1,method=3)
     }
-  } else if(call1=="lmer"){
-
+  } else if(is(fit,"lmerMod")){
     data[,outv] <- data[,outv]-off1
-    f1 <- do.call("fastLm",list(X=X,y=Y))
+    f1 <- RcppArmadillo::fastLm(X=X,y=Y)
   }
 
   f1$outv <- outv
@@ -81,6 +78,8 @@ est_null_model <- function(fit,
 #' the test statistics under the original treatment assignment then this should be the same
 #' as tr_var
 #' @return The value of the test statistic
+#' @importFrom methods is
+#' @importFrom stats predict.lm predict.glm
 #' @export
 qscore_stat <- function(fit,
                         data,

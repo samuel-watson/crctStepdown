@@ -9,7 +9,6 @@
 #' @return A data frame with columns cl and t indicating the time pp
 #' @examples
 #   gen_rand_order(10,7)
-#'
 #' @export
 gen_rand_order <- function(nJ,nT){
   df_tr <- data.frame(cl=sample(1:nJ,nJ),t=NA)
@@ -39,6 +38,7 @@ gen_rand_order <- function(nJ,nT){
 #' @param sig_cl Vector of two values equal to the variance of the random effect in each model
 #' @return A list consisting of: (1) data frame with the cluster IDs (cl), treatment effect indicators (treat),
 #' and two outcomes (y1, y2), and (2) the values of the treatment effect parameters used in the simulation.
+#' @importFrom stats rnorm rpois
 #' @export
 twoarm_sim <- function(nJ=c(7,7),
                        N = 20,

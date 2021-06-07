@@ -15,6 +15,7 @@
 #' the treatment group. If NULL then clusters are randomised in a 1:1 ratio to treatment and control
 #' @return A vector of the length of fitlist with the test statistics for each model and null
 #' hypothesis
+#' @importFrom methods is
 #' @export
 lme_permute2 <- function(fitlist,
                          data,
@@ -98,6 +99,7 @@ permute <- function(fitlist,
 #'
 #' @param fit A fitted model object of class glm, lm, or *merMod
 #' @return A string with the name of the dependent variable from the model
+#' @importFrom methods is
 #' @export
 outname_fit <- function(fit){
   if(!(is(fit,"glm")|!is(fit,"lm")|is(fit,"glmerMod")|is(fit,"lmerMod")))

@@ -44,6 +44,7 @@ perm_dist <- function(out,
 #' @param confint Logical indicating whether to run the confidence interval search process
 #' @param verbose Logical indicating whether to provide detailed output
 #' @return A data frame with the point estimates, p-values, and confidence intervals
+#' @importFrom methods is
 #' @export
 stepdown <- function(fitlist,
                      tr_var = "treat",
