@@ -14,7 +14,8 @@ conf_int_search(
   plots = TRUE,
   cl_var = "cl",
   rand_func = NULL,
-  verbose = TRUE
+  verbose = TRUE,
+  type = "rw"
 )
 }
 \arguments{
@@ -43,6 +44,9 @@ two columns of cl_var and t identifying the cluster ID and time period a cluster
 the treatment group.  If NULL then clusters are randomised in a 1:1 ratio to treatment and control}
 
 \item{verbose}{Logical indicating whether to provide verbose output showing progress and estimates}
+
+\item{type}{Method of correction: options are "rw" = Romano-Wolf randomisation test based stepdown, "h"
+= Holm standard stepdown, "b" = Bonferroni}
 }
 \value{
 A vector of length p with the estimates of the limits
@@ -61,4 +65,30 @@ than the randomisation test statistic it would be compared to under the resampli
 approach of Romano & Wolf (2005). At the limits of the confidence set all values should
 be rejected in a two-sided hypothesis test with a family-wise error rate of alpha, which
 provides a probabilistic basis for the search process. See Watson (2021) for more details.
+}
+\examples{
+out <- twoarm_sim()
+data <- out[[1]]
+fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,
+                    data=data,
+                    family="poisson")
+
+fit2 <- lme4::glmer(y2 ~ treat + (1|cl),
+                    data=data,
+                    family="poisson")
+fitlist <- list(fit1,fit2)
+tr_eff <- rep(NA,2)
+for(i in 1:2){
+    res <- summary(fitlist[[i]])
+    tr_eff[i] <- res$coefficients["treat",'Estimate']
+}
+conf_int_search(fitlist,
+                 data = data,
+                 actual_tr=tr_eff,
+                 start=tr_eff+1,
+                 nsteps=100,
+                 alpha=0.025,
+                 plots = FALSE,
+                 cl_var = "cl",
+                 verbose = FALSE)
 }

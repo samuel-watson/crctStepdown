@@ -29,10 +29,37 @@
 #' two columns of cl_var and t identifying the cluster ID and time period a cluster joins
 #' the treatment group.  If NULL then clusters are randomised in a 1:1 ratio to treatment and control
 #' @param verbose Logical indicating whether to provide verbose output showing progress and estimates
+#' @param type Method of correction: options are "rw" = Romano-Wolf randomisation test based stepdown, "h"
+#' = Holm standard stepdown, "b" = Bonferroni
 #' @return A vector of length p with the estimates of the limits
 #' @importFrom methods is
 #' @importFrom ggplot2 aes
 #' @importFrom rlang .data
+#' @examples
+#' out <- twoarm_sim()
+#' data <- out[[1]]
+#' fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,
+#'                     data=data,
+#'                     family="poisson")
+#'
+#' fit2 <- lme4::glmer(y2 ~ treat + (1|cl),
+#'                     data=data,
+#'                     family="poisson")
+#' fitlist <- list(fit1,fit2)
+#' tr_eff <- rep(NA,2)
+#' for(i in 1:2){
+#'     res <- summary(fitlist[[i]])
+#'     tr_eff[i] <- res$coefficients["treat",'Estimate']
+#' }
+#' conf_int_search(fitlist,
+#'                  data = data,
+#'                  actual_tr=tr_eff,
+#'                  start=tr_eff+1,
+#'                  nsteps=100,
+#'                  alpha=0.025,
+#'                  plots = FALSE,
+#'                  cl_var = "cl",
+#'                  verbose = FALSE)
 #' @export
 conf_int_search <- function(fitlist,
                             data,
@@ -43,7 +70,8 @@ conf_int_search <- function(fitlist,
                             plots=TRUE,
                             cl_var = "cl",
                             rand_func = NULL,
-                            verbose=TRUE){
+                            verbose=TRUE,
+                            type="rw"){
   if(!is(fitlist,"list"))stop("fitlist should be a list.")
   if(!all(unlist(lapply(fitlist,function(x)I(is(x,"glmerMod")|is(x,"lmerMod"))))))stop("All elements of fitlist should be lme4 model objects")
   p <- length(fitlist)
@@ -82,22 +110,43 @@ conf_int_search <- function(fitlist,
     actual_t <- abs(actual_t)
     val <- abs(val)
     pos_t <- order(actual_t)
-    t.st <- rep(NA,length(actual_t))
-    p.st <- rep(NA,length(actual_t))
     step <- rep(NA,length(actual_t))
-    for(j in 1:length(actual_t)){
-      t.st[pos_t[(length(pos_t) - (j-1))]] <- max(actual_t[pos_t[1:(length(pos_t) - (j-1))]])
-      p.st[pos_t[(length(pos_t) - (j-1))]] <- max(val[pos_t[1:(length(pos_t) - (j-1))]])
-      step[pos_t[(length(pos_t) - (j-1))]] <- k*(actual_tr[pos_t[(length(pos_t) - (j-1))]] -
-                                                   bound[pos_t[(length(pos_t) - (j-1))]])
+
+    if(type=="rw"){
+      t.st <- rep(NA,length(actual_t))
+      p.st <- rep(NA,length(actual_t))
+
+      for(j in 1:length(actual_t)){
+        t.st[pos_t[(length(pos_t) - (j-1))]] <- max(actual_t[pos_t[1:(length(pos_t) - (j-1))]])
+        p.st[pos_t[(length(pos_t) - (j-1))]] <- max(val[pos_t[1:(length(pos_t) - (j-1))]])
+        step[pos_t[(length(pos_t) - (j-1))]] <- k*(actual_tr[pos_t[(length(pos_t) - (j-1))]] -
+                                                     bound[pos_t[(length(pos_t) - (j-1))]])
+      }
+      rjct <- I(t.st > p.st)
+      J <- rep(1,length(pos_t))
     }
-    rjct <- I(t.st > p.st)
+
+    if(type=="b"|type=="h"){
+      rjct <- I(actual_t > val)
+      step <- k*(actual_tr - bound)
+      if(type=="b"){
+        J <- rep(length(actual_t),length(actual_t))
+      }
+      if(type=="h"){
+        J <- rep(NA,length(actual_t))
+        for(j in 1:length(actual_t)){
+          J[pos_t[j]] <- length(actual_t) + 1 - j
+        }
+      }
+    }
+
+
 
     for(j in 1:length(actual_t)){
       if(rjct[j]){
-        bound[j] <- bound[j] + step[j]*(alpha)/i
+        bound[j] <- bound[j] + step[j]*(alpha/J[j])/i
       } else {
-        bound[j] <- bound[j] - step[j]*(1-alpha)/i
+        bound[j] <- bound[j] - step[j]*(1-alpha/J[j])/i
       }
     }
 

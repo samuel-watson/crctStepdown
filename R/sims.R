@@ -6,9 +6,9 @@
 #'
 #' @param nJ Number of clusters
 #' @param nT Number of time points
-#' @return A data frame with columns cl and t indicating the time pp
+#' @return A data frame with columns cl and t indicating the time
 #' @examples
-#   gen_rand_order(10,7)
+#  df <- gen_rand_order(10,7)
 #' @export
 gen_rand_order <- function(nJ,nT){
   df_tr <- data.frame(cl=sample(1:nJ,nJ),t=NA)
@@ -27,7 +27,8 @@ gen_rand_order <- function(nJ,nT){
 #' parallel cluster randomised trial with no baseline measures. A log-linear model
 #' is specified y~Poisson(lambda) with lambda = exp(mu + beta*D + theta) where D is the
 #' treatment effect indicator equal to one in clusters with the treatment and zero
-#' otherwise, and theta~N(0,sigma^2) is the cluster random effect.
+#' otherwise, and theta~N(0,sigma^2) is the cluster random effect. Used for testing
+#' error rates of the methods.
 #'
 #' @param nJ Vector of two integers with the number of clusters in treatment and
 #' control arms
@@ -39,6 +40,9 @@ gen_rand_order <- function(nJ,nT){
 #' @return A list consisting of: (1) data frame with the cluster IDs (cl), treatment effect indicators (treat),
 #' and two outcomes (y1, y2), and (2) the values of the treatment effect parameters used in the simulation.
 #' @importFrom stats rnorm rpois
+#' @examples
+#' out <- twoarm_sim()
+#' data <- out[[1]]
 #' @export
 twoarm_sim <- function(nJ=c(7,7),
                        N = 20,

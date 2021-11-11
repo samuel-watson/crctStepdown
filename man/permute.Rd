@@ -38,3 +38,26 @@ for each model and each iteration
 \description{
 Calls lme_permute2 to replicate the permutations
 }
+\examples{
+out <- twoarm_sim()
+data <- out[[1]]
+  fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,
+data=data,
+family="poisson")
+
+fit2 <- lme4::glmer(y2 ~ treat + (1|cl),
+                    data=data,
+                    family="poisson")
+fitlist <- list(fit1,fit2)
+nullfitlist <- list()
+for(i in 1:length(fitlist)){
+  nullfitlist[[i]] <- est_null_model(fitlist[[i]],
+                                     data,
+                                     tr_var = "treat",
+                                     null_par = 0)
+}
+out <- permute(nullfitlist,
+               data=data,
+               n_permute = 10,
+               cl_var = "cl")
+}

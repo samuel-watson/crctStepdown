@@ -13,6 +13,7 @@ stepdown(
   plots = TRUE,
   n_permute = 1000,
   nsteps = 1000,
+  type = "rw",
   rand_func = NULL,
   confint = TRUE,
   verbose = TRUE
@@ -38,6 +39,9 @@ interval search during running of function. Default is TRUE}
 
 \item{nsteps}{Number of steps of the confidence interval search process}
 
+\item{type}{Method of correction: options are "rw" = Romano-Wolf randomisation test based stepdown, "h"
+= Holm standard stepdown, "b" = Bonferroni}
+
 \item{rand_func}{String of the name of a function that re-randomises the clusters. The function should
 produce a data frame that identifies the clusters in the treatment group under the new
 randomisation scheme. The data frame can either have a single column with name cl_var or
@@ -56,4 +60,21 @@ For a set of models fit with lme4, the function will conduct the randomisation t
 and generate p-values for the null hypotheses of no treatment effect that controls the
 family-wise error rate, and generates a 100(1-alpha)\% confidence set for the
 treatment effect model parameters.
+}
+\examples{
+out <- twoarm_sim()
+data <- out[[1]]
+  fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,
+data=data,
+family="poisson")
+
+fit2 <- lme4::glmer(y2 ~ treat + (1|cl),
+                    data=data,
+                    family="poisson")
+ stepdown(fitlist=list(fit1,fit2),
+          data=data,
+          n_permute = 100,
+          nsteps=100,
+          plots=FALSE,
+          verbose=TRUE)
 }

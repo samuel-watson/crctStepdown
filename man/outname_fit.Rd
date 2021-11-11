@@ -15,3 +15,11 @@ A string with the name of the dependent variable from the model
 \description{
 Extracts the dependent variable name from glm, lm, or mer model
 }
+\examples{
+out <- twoarm_sim()
+data <- out[[1]]
+fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,
+                    data=data,
+                    family="poisson")
+outname_fit(fit1)
+}

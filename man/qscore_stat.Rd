@@ -37,3 +37,12 @@ Calculates a randomisation test statistic based on the sum of generalised, stude
 residuals for a given model fit and null hypothesis of the value of the treatment effect
 parameter
 }
+\examples{
+out <- twoarm_sim()
+data <- out[[1]]
+  fit1 <- glm(y1 ~ treat ,
+              data=data,
+              family="poisson")
+qscore_stat(fit=fit1,
+            data=data)
+}
