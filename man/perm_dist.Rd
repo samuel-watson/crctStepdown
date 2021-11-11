@@ -11,6 +11,9 @@ perm_dist(out, positions)
 
 \item{positions}{Vector indicating which rows of out to use}
 }
+\value{
+Vector of numeric values of length \code{ncol(out)}
+}
 \description{
 Extracts the test statistics from the output of the \code{permute} function.
 Returns the largest value from a specified subset of rows, each row is the test

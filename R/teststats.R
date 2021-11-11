@@ -15,6 +15,24 @@
 #' @return An lm or glm model fit under the null model
 #' @importFrom methods is
 #' @importFrom stats model.matrix as.formula
+#' @examples
+#' out <- twoarm_sim()
+#' data <- out[[1]]
+#'   fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,
+#' data=data,
+#' family="poisson")
+#'
+#' fit2 <- lme4::glmer(y2 ~ treat + (1|cl),
+#'                     data=data,
+#'                     family="poisson")
+#' fitlist <- list(fit1,fit2)
+#' nullfitlist <- list()
+#' for(i in 1:length(fitlist)){
+#'   nullfitlist[[i]] <- est_null_model(fitlist[[i]],
+#'                                      data,
+#'                                      tr_var = "treat",
+#'                                      null_par = 0)
+#' }
 #' @export
 est_null_model <- function(fit,
                            data,
@@ -80,6 +98,14 @@ est_null_model <- function(fit,
 #' @return The value of the test statistic
 #' @importFrom methods is
 #' @importFrom stats predict.lm predict.glm
+#' @examples
+#' out <- twoarm_sim()
+#' data <- out[[1]]
+#'   fit1 <- glm(y1 ~ treat ,
+#'               data=data,
+#'               family="poisson")
+#' qscore_stat(fit=fit1,
+#'             data=data)
 #' @export
 qscore_stat <- function(fit,
                         data,
@@ -106,21 +132,6 @@ qscore_stat <- function(fit,
   if(is(fit,"fastLm")|is(fit,"lm")){
     pr1 <- pr1 + null_par*data[!is.na(data[,outv]),tr_var]
   }
-
-  #s1 <- summary(fit)
-  #call1 <- fit$call[[1]]#fit@call[[1]]
-  #family <- nullfitlist[[1]]$family[[1]]
-  # if(grepl("glm",call1)){
-  #   family <- fit$family[[1]]#fit@call[[4]]
-  #   if(family=="poisson"){
-  #     f2 <- "h_pois"
-  #   }
-  #   if(family=="binomial"){
-  #     f2 <- "h_logit"
-  #   }
-  # } else {
-  #   f2 <- "h_norm"
-  # }
 
   cltmp <- as.numeric(as.factor(data[,cl_var]))-1
 

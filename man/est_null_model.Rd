@@ -27,3 +27,22 @@ from the value of the outcome for those in receipt of the treatment and an lm mo
 is fitted with no treatment effect. For generalised linear models (glmer) the model is
 refitted as a glm model with the treatment effect specified as an offset.
 }
+\examples{
+out <- twoarm_sim()
+data <- out[[1]]
+  fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,
+data=data,
+family="poisson")
+
+fit2 <- lme4::glmer(y2 ~ treat + (1|cl),
+                    data=data,
+                    family="poisson")
+fitlist <- list(fit1,fit2)
+nullfitlist <- list()
+for(i in 1:length(fitlist)){
+  nullfitlist[[i]] <- est_null_model(fitlist[[i]],
+                                     data,
+                                     tr_var = "treat",
+                                     null_par = 0)
+}
+}

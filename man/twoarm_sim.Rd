@@ -34,5 +34,10 @@ Simple simulation of two Poisson distributed outcomes for a two-arm
 parallel cluster randomised trial with no baseline measures. A log-linear model
 is specified y~Poisson(lambda) with lambda = exp(mu + beta*D + theta) where D is the
 treatment effect indicator equal to one in clusters with the treatment and zero
-otherwise, and theta~N(0,sigma^2) is the cluster random effect.
+otherwise, and theta~N(0,sigma^2) is the cluster random effect. Used for testing
+error rates of the methods.
+}
+\examples{
+out <- twoarm_sim()
+data <- out[[1]]
 }

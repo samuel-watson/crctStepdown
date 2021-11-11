@@ -12,7 +12,7 @@ gen_rand_order(nJ, nT)
 \item{nT}{Number of time points}
 }
 \value{
-A data frame with columns cl and t indicating the time pp
+A data frame with columns cl and t indicating the time
 }
 \description{
 Function to generate a stepped-wedge cRCT randomisation allocation. Assumes a baseline

@@ -16,6 +16,27 @@
 #' @return A vector of the length of fitlist with the test statistics for each model and null
 #' hypothesis
 #' @importFrom methods is
+#' @examples
+#' out <- twoarm_sim()
+#' data <- out[[1]]
+#'   fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,
+#' data=data,
+#' family="poisson")
+#'
+#' fit2 <- lme4::glmer(y2 ~ treat + (1|cl),
+#'                     data=data,
+#'                     family="poisson")
+#' fitlist <- list(fit1,fit2)
+#' nullfitlist <- list()
+#' for(i in 1:length(fitlist)){
+#'   nullfitlist[[i]] <- est_null_model(fitlist[[i]],
+#'                                      data,
+#'                                      tr_var = "treat",
+#'                                      null_par = 0)
+#' }
+#' out <- lme_permute2(nullfitlist,
+#'                data=data,
+#'                cl_var = "cl")
 #' @export
 lme_permute2 <- function(fitlist,
                          data,
@@ -79,6 +100,29 @@ lme_permute2 <- function(fitlist,
 #' the treatment group.  If NULL then clusters are randomised in a 1:1 ratio to treatment and control
 #' @return An array of dimension length(fitlist)*n_permute containing the test statistics
 #' for each model and each iteration
+#' @examples
+#' out <- twoarm_sim()
+#' data <- out[[1]]
+#'   fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,
+#' data=data,
+#' family="poisson")
+#'
+#' fit2 <- lme4::glmer(y2 ~ treat + (1|cl),
+#'                     data=data,
+#'                     family="poisson")
+#' fitlist <- list(fit1,fit2)
+#' nullfitlist <- list()
+#' for(i in 1:length(fitlist)){
+#'   nullfitlist[[i]] <- est_null_model(fitlist[[i]],
+#'                                      data,
+#'                                      tr_var = "treat",
+#'                                      null_par = 0)
+#' }
+#' out <- permute(nullfitlist,
+#'                data=data,
+#'                n_permute = 10,
+#'                cl_var = "cl")
+#' @export
 permute <- function(fitlist,
                     data,
                     n_permute=100,
@@ -100,15 +144,22 @@ permute <- function(fitlist,
 #' @param fit A fitted model object of class glm, lm, or *merMod
 #' @return A string with the name of the dependent variable from the model
 #' @importFrom methods is
+#' @examples
+#' out <- twoarm_sim()
+#' data <- out[[1]]
+#' fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,
+#'                     data=data,
+#'                     family="poisson")
+#' outname_fit(fit1)
 #' @export
 outname_fit <- function(fit){
   if(!(is(fit,"glm")|!is(fit,"lm")|is(fit,"glmerMod")|is(fit,"lmerMod")))
     stop("Model class should be glm, lm, or mer")
 
   if(is(fit,"glm")){
-    outv <- strsplit(as.character(fit$formula), " ")[[1]][1]
+    outv <- strsplit(as.character(fit$formula), " ")[[2]][1]
   } else if(is(fit,"lm")){
-    outv <- strsplit(as.character(fit$call[[2]])," ")[[1]][1]
+    outv <- strsplit(as.character(fit$call[[2]])," ")[[2]][1]
   } else if(grepl("mer",class(fit))){
     outv <- strsplit(as.character(fit@call[[2]])," ")[[2]]
   } else if(is(fit,"fastglm")|is(fit,"fastLm")){
