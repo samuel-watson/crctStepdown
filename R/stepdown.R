@@ -92,7 +92,13 @@ stepdown <- function(fitlist,
     res <- summary(fitlist[[i]])
     tr_eff[i] <- res$coefficients[tr_var,'Estimate']
     tr_sd[i] <- res$coefficients[tr_var,'Std. Error']
-    tr_p[i] <- res$coefficients[tr_var,4]
+    if(ncol(res$coefficients)<4){
+      tr_p[i] <- res$coefficients[tr_var,3]
+      tr_p[i] <- 2*(1-pnorm(abs(tr_p[i])))
+    } else {
+      tr_p[i] <- res$coefficients[tr_var,4]
+    }
+
   }
 
   tr_st <- rep(NA,length(fitlist))
