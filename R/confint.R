@@ -30,7 +30,7 @@
 #' the treatment group.  If NULL then clusters are randomised in a 1:1 ratio to treatment and control
 #' @param verbose Logical indicating whether to provide verbose output showing progress and estimates
 #' @param type Method of correction: options are "rw" = Romano-Wolf randomisation test based stepdown, "h"
-#' = Holm standard stepdown, "b" = Bonferroni
+#' = Holm standard stepdown, "b" = Bonferroni, or "none" for no correction.
 #' @return A vector of length p with the estimates of the limits
 #' @importFrom methods is
 #' @importFrom ggplot2 aes
@@ -126,17 +126,20 @@ conf_int_search <- function(fitlist,
       J <- rep(1,length(pos_t))
     }
 
-    if(type=="b"|type=="h"){
+    if(type=="b"|type=="h"|type=="br"|type=="hr"|type=="none"){
       rjct <- I(actual_t > val)
       step <- k*(actual_tr - bound)
-      if(type=="b"){
+      if(type=="b"|type=="br"){
         J <- rep(length(actual_t),length(actual_t))
       }
-      if(type=="h"){
+      if(type=="h"|type=="hr"){
         J <- rep(NA,length(actual_t))
         for(j in 1:length(actual_t)){
           J[pos_t[j]] <- length(actual_t) + 1 - j
         }
+      }
+      if(type=="none"){
+        J <- rep(1,length(actual_t))
       }
     }
 

@@ -46,7 +46,7 @@ the treatment group.  If NULL then clusters are randomised in a 1:1 ratio to tre
 \item{verbose}{Logical indicating whether to provide verbose output showing progress and estimates}
 
 \item{type}{Method of correction: options are "rw" = Romano-Wolf randomisation test based stepdown, "h"
-= Holm standard stepdown, "b" = Bonferroni}
+= Holm standard stepdown, "b" = Bonferroni, or "none" for no correction.}
 }
 \value{
 A vector of length p with the estimates of the limits

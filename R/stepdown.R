@@ -37,7 +37,8 @@ perm_dist <- function(out,
 #' @param n_permute Number of permutations of the randomisation test to run
 #' @param nsteps Number of steps of the confidence interval search process
 #' @param type Method of correction: options are "rw" = Romano-Wolf randomisation test based stepdown, "h"
-#' = Holm standard stepdown, "b" = Bonferroni
+#' = Holm standard stepdown, "h" = Holm stepdown using randomisation test, "b" = standard Bonferroni, "br" =
+#' Bonerroni using randomisation test, or "none" = randomisation test with no correction.
 #' @param rand_func String of the name of a function that re-randomises the clusters. The function should
 #' produce a data frame that identifies the clusters in the treatment group under the new
 #' randomisation scheme. The data frame can either have a single column with name cl_var or
@@ -82,7 +83,7 @@ stepdown <- function(fitlist,
   if(!cl_var%in%colnames(data))stop("cl_var not in colnames(data)")
   if(!all(unlist(lapply(fitlist,function(x)I(is(x,"glmerMod")|is(x,"lmerMod"))))))stop("All elements of fitlist should be lme4 model objects")
   if(alpha<=0|alpha>=1)stop("alpha should be between 0 and 1")
-  if(!type%in%c("rw","b","h"))stop("type should be one of rw, b, or h.")
+  if(!type%in%c("rw","b","h","br","hr","none"))stop("type should be one of rw, b, br, h, hr, or none.")
 
   if(verbose)cat("Extracting treatment effect estimates.\n")
   tr_eff <- rep(NA,length(fitlist))
@@ -107,7 +108,7 @@ stepdown <- function(fitlist,
   if(verbose)cat("Point estimates: ",round(tr_eff,2),"\n")
   if(verbose)cat("Uncorrected SE: ",round(tr_sd,2),"\n")
 
-  if(type=="rw"){
+  if(type%in%c("rw","br","hr","none")){
     nullfitlist <- list()
     for(i in 1:length(fitlist)){
       nullfitlist[[i]] <- est_null_model(fitlist[[i]],
@@ -147,20 +148,68 @@ stepdown <- function(fitlist,
     ord_t <- order(tr_st)
     if(plots)plist <- list()
 
-    for(i in 1:length(ord_t)){
-      test_stat <- max(tr_st[ord_t[1:(length(ord_t) - (i-1))]])
-      vals <- perm_dist(out,ord_t[1:(length(ord_t) - (i-1))])
-      tr_p[ord_t[(length(ord_t) - (i-1))]] <- (1+length(vals[vals>test_stat]))/(length(vals)+1)
+    if(type=="rw"){
+      for(i in 1:length(ord_t)){
+        test_stat <- max(tr_st[ord_t[1:(length(ord_t) - (i-1))]])
+        vals <- perm_dist(out,ord_t[1:(length(ord_t) - (i-1))])
+        tr_p[ord_t[(length(ord_t) - (i-1))]] <- (1+length(vals[vals>test_stat]))/(length(vals)+1)
 
-      if(plots){
-        plist[[i]] <- ggplot2::qplot(vals,bins=30) +
-          ggplot2::geom_vline(xintercept = test_stat,color="red")+
-          ggplot2::labs(x=paste0(i,"th largest statistic"))+
-          ggplot2::annotate("text",x = Inf, y= Inf,hjust=1,vjust=1,color="red",
-                            label=paste0("p = ",round(tr_p[which(ord_t==(length(ord_t) - (i-1)))],2)))
+        if(plots){
+          plist[[i]] <- ggplot2::qplot(vals,bins=30) +
+            ggplot2::geom_vline(xintercept = test_stat,color="red")+
+            ggplot2::labs(x=paste0(i,"th largest statistic"))+
+            ggplot2::annotate("text",x = Inf, y= Inf,hjust=1,vjust=1,color="red",
+                              label=paste0("p = ",round(tr_p[which(ord_t==(length(ord_t) - (i-1)))],2)))
+        }
+
       }
-
     }
+
+    if(type=="br"){
+      for(i in 1:length(ord_t)){
+        vals <- out[i,]
+        tr_p[i] <- (1+length(vals[vals>tr_st[i]]))/(length(vals)+1)
+        tr_p[i] <- min(tr_p[i]*length(fitlist),1)
+
+        if(plots){
+          plist[[i]] <- ggplot2::qplot(vals,bins=30) +
+            ggplot2::geom_vline(xintercept = tr_st[i],color="red")+
+            ggplot2::annotate("text",x = Inf, y= Inf,hjust=1,vjust=1,color="red",
+                              label=paste0("p = ",round(tr_p[i],2)))
+        }
+      }
+    }
+
+    if(type=="hr"){
+      for(i in 1:length(ord_t)){
+        vals <- out[ord_t[i],]
+        tr_p[ord_t[i]] <- (1+length(vals[vals>tr_st[ord_t[i]]]))/(length(vals)+1)
+        tr_p[ord_t[i]] <- min(tr_p[ord_t[i]]*(length(fitlist)+1-i),1)
+
+        if(plots){
+          plist[[i]] <- ggplot2::qplot(vals,bins=30) +
+            ggplot2::geom_vline(xintercept = tr_st[ord_t[i]],color="red")+
+            ggplot2::labs(x=paste0(i,"th largest statistic"))+
+            ggplot2::annotate("text",x = Inf, y= Inf,hjust=1,vjust=1,color="red",
+                              label=paste0("p = ",round(tr_p[ord_t[i]],2)))
+        }
+      }
+    }
+
+    if(type=="none"){
+      for(i in 1:length(ord_t)){
+        vals <- out[i,]
+        tr_p[i] <- (1+length(vals[vals>tr_st[i]]))/(length(vals)+1)
+
+        if(plots){
+          plist[[i]] <- ggplot2::qplot(vals,bins=30) +
+            ggplot2::geom_vline(xintercept = tr_st[i],color="red")+
+            ggplot2::annotate("text",x = Inf, y= Inf,hjust=1,vjust=1,color="red",
+                              label=paste0("p = ",round(tr_p[i],2)))
+        }
+      }
+    }
+
     if(plots) print(ggpubr::ggarrange(plotlist = plist))
   }
 
