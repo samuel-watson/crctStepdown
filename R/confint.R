@@ -79,7 +79,7 @@ conf_int_search <- function(fitlist,
   if(length(start)!=p)stop("length(actual_tr)!=length(fitlist)")
 
   bound <- start
-  k <- 2/(1.96*((2*pi)^-0.5)*exp((-1.96^2)/2))
+
   dfv <- matrix(NA,nrow=nsteps,ncol=length(actual_tr))
   actual_t <- rep(NA,length(fitlist))
 
@@ -115,6 +115,7 @@ conf_int_search <- function(fitlist,
     if(type=="rw"){
       t.st <- rep(NA,length(actual_t))
       p.st <- rep(NA,length(actual_t))
+      k <- 2/(qnorm(1-alpha)*((2*pi)^-0.5)*exp((-qnorm(1-alpha)^2)/2))
 
       for(j in 1:length(actual_t)){
         t.st[pos_t[(length(pos_t) - (j-1))]] <- max(actual_t[pos_t[1:(length(pos_t) - (j-1))]])
@@ -128,14 +129,19 @@ conf_int_search <- function(fitlist,
 
     if(type=="b"|type=="h"){
       rjct <- I(actual_t > val)
-      step <- k*(actual_tr - bound)
+
       if(type=="b"){
+        k <- 2/(qnorm(1-alpha/length(actual_t))*((2*pi)^-0.5)*exp((-qnorm(1-alpha/length(actual_t))^2)/2))
+        step <- k*(actual_tr - bound)
         J <- rep(length(actual_t),length(actual_t))
       }
       if(type=="h"){
         J <- rep(NA,length(actual_t))
+        step <- rep(NA,length(actual_t))
         for(j in 1:length(actual_t)){
           J[pos_t[j]] <- length(actual_t) + 1 - j
+          k <- 2/(qnorm(1-alpha/J[pos_t[j]])*((2*pi)^-0.5)*exp((-qnorm(1-alpha/J[pos_t[j]])^2)/2))
+          step[pos_t[j]] <- k*(actual_tr[pos_t[j]] - bound[pos_t[j]])
         }
       }
     }
