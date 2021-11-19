@@ -146,6 +146,13 @@ conf_int_search <- function(fitlist,
       }
     }
 
+    if(type=="none"){
+      k <- 2/(qnorm(1-alpha)*((2*pi)^-0.5)*exp((-qnorm(1-alpha)^2)/2))
+      rjct <- I(actual_t > val)
+      step <- k*(actual_tr - bound)
+      J <- rep(1,length(pos_t))
+    }
+
 
 
     for(j in 1:length(actual_t)){
