@@ -30,7 +30,7 @@
 #' the treatment group.  If NULL then clusters are randomised in a 1:1 ratio to treatment and control
 #' @param verbose Logical indicating whether to provide verbose output showing progress and estimates
 #' @param type Method of correction: options are "rw" = Romano-Wolf randomisation test based stepdown, "h"
-#' = Holm standard stepdown, "b" = Bonferroni
+#' = Holm standard stepdown, "b" = Bonferroni, or "none" for no correction.
 #' @return A vector of length p with the estimates of the limits
 #' @importFrom methods is
 #' @importFrom ggplot2 aes
@@ -115,7 +115,7 @@ conf_int_search <- function(fitlist,
     if(type=="rw"){
       t.st <- rep(NA,length(actual_t))
       p.st <- rep(NA,length(actual_t))
-      k <- 2/(qnorm(1-alpha)*((2*pi)^-0.5)*exp((-qnorm(1-alpha)^2)/2))
+      k <- 2/(pnorm(1-alpha)*((2*pi)^-0.5)*exp((-pnorm(1-alpha)^2)/2))
 
       for(j in 1:length(actual_t)){
         t.st[pos_t[(length(pos_t) - (j-1))]] <- max(actual_t[pos_t[1:(length(pos_t) - (j-1))]])
@@ -127,30 +127,28 @@ conf_int_search <- function(fitlist,
       J <- rep(1,length(pos_t))
     }
 
-    if(type=="b"|type=="h"){
+    if(type=="b"|type=="h"|type=="br"|type=="hr"|type=="none"){
       rjct <- I(actual_t > val)
 
-      if(type=="b"){
-        k <- 2/(qnorm(1-alpha/length(actual_t))*((2*pi)^-0.5)*exp((-qnorm(1-alpha/length(actual_t))^2)/2))
-        step <- k*(actual_tr - bound)
+      if(type=="b"|type=="br"){
+        k <- 2/(pnorm(1-alpha/length(actual_t))*((2*pi)^-0.5)*exp((-pnorm(1-alpha/length(actual_t))^2)/2))
         J <- rep(length(actual_t),length(actual_t))
+        step <- k*(actual_tr - bound)
       }
-      if(type=="h"){
+      if(type=="h"|type=="hr"){
         J <- rep(NA,length(actual_t))
         step <- rep(NA,length(actual_t))
         for(j in 1:length(actual_t)){
           J[pos_t[j]] <- length(actual_t) + 1 - j
-          k <- 2/(qnorm(1-alpha/J[pos_t[j]])*((2*pi)^-0.5)*exp((-qnorm(1-alpha/J[pos_t[j]])^2)/2))
+          k <- 2/(pnorm(1-alpha/J[pos_t[j]])*((2*pi)^-0.5)*exp((-pnorm(1-alpha/J[pos_t[j]])^2)/2))
           step[pos_t[j]] <- k*(actual_tr[pos_t[j]] - bound[pos_t[j]])
         }
       }
-    }
-
-    if(type=="none"){
-      k <- 2/(qnorm(1-alpha)*((2*pi)^-0.5)*exp((-qnorm(1-alpha)^2)/2))
-      rjct <- I(actual_t > val)
-      step <- k*(actual_tr - bound)
-      J <- rep(1,length(pos_t))
+      if(type=="none"){
+        k <- 2/(pnorm(1-alpha)*((2*pi)^-0.5)*exp((-pnorm(1-alpha)^2)/2))
+        J <- rep(1,length(actual_t))
+        step <- k*(actual_tr - bound)
+      }
     }
 
 
