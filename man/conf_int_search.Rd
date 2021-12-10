@@ -10,7 +10,7 @@ conf_int_search(
   actual_tr,
   start,
   nsteps = 1000,
-  alpha = 0.025,
+  alpha = 0.05,
   plots = TRUE,
   cl_var = "cl",
   rand_func = NULL,

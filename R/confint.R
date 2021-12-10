@@ -35,6 +35,7 @@
 #' @importFrom methods is
 #' @importFrom ggplot2 aes
 #' @importFrom rlang .data
+#' @importFrom stats pnorm
 #' @examples
 #' out <- twoarm_sim()
 #' data <- out[[1]]
