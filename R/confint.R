@@ -139,9 +139,9 @@ conf_int_search <- function(fitlist,
         J <- rep(NA,length(actual_t))
         step <- rep(NA,length(actual_t))
         for(j in 1:length(actual_t)){
-          J[pos_t[j]] <- length(actual_t) + 1 - j
-          k <- 2/(pnorm(1-alpha/J[pos_t[j]])*((2*pi)^-0.5)*exp((-pnorm(1-alpha/J[pos_t[j]])^2)/2))
-          step[pos_t[j]] <- k*(actual_tr[pos_t[j]] - bound[pos_t[j]])
+          J[pos_t[(length(pos_t) - (j-1))]] <- length(actual_t) + 1 - j
+          k <- 2/(pnorm(1-alpha/J[pos_t[(length(pos_t) - (j-1))]])*((2*pi)^-0.5)*exp((-pnorm(1-alpha/J[pos_t[(length(pos_t) - (j-1))]])^2)/2))
+          step[pos_t[(length(pos_t) - (j-1))]] <- k*(actual_tr[pos_t[(length(pos_t) - (j-1))]] - bound[pos_t[(length(pos_t) - (j-1))]])
         }
       }
       if(type=="none"){

@@ -182,9 +182,9 @@ stepdown <- function(fitlist,
 
     if(type=="hr"){
       for(i in 1:length(ord_t)){
-        vals <- out[ord_t[i],]
-        tr_p[ord_t[i]] <- (1+length(vals[vals>tr_st[ord_t[i]]]))/(length(vals)+1)
-        tr_p[ord_t[i]] <- min(tr_p[ord_t[i]]*(length(fitlist)+1-i),1)
+        vals <- out[ord_t[(length(ord_t) - (i-1))],]
+        tr_p[ord_t[(length(ord_t) - (i-1))]] <- (1+length(vals[vals>tr_st[ord_t[(length(ord_t) - (i-1))]]]))/(length(vals)+1)
+        tr_p[ord_t[(length(ord_t) - (i-1))]] <- min(tr_p[ord_t[(length(ord_t) - (i-1))]]*(length(fitlist)+1-i),1)
 
         if(plots){
           plist[[i]] <- ggplot2::qplot(vals,bins=30) +
@@ -220,7 +220,7 @@ stepdown <- function(fitlist,
   if(type=="h"){
     ord_p <- order(tr_p)
     for(i in 1:length(fitlist)){
-      tr_p[ord_p[i]] <- tr_p[ord_p[i]]*(length(fitlist)-i+1)
+      tr_p[ord_p[(length(ord_p) - (i-1))]] <- tr_p[ord_p[(length(ord_p) - (i-1))]]*(length(fitlist)-i+1)
     }
     tr_p <- ifelse(tr_p>1,1,tr_p)
   }
