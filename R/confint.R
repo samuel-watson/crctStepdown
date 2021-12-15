@@ -127,7 +127,7 @@ conf_int_search <- function(fitlist,
       J <- rep(1,length(pos_t))
     }
 
-    if(type=="b"|type=="h"|type=="br"|type=="hr"|type=="none"){
+    else if(type=="b"|type=="h"|type=="br"|type=="hr"|type=="none"){
       rjct <- I(actual_t > val)
 
       if(type=="b"|type=="br"){
@@ -135,7 +135,7 @@ conf_int_search <- function(fitlist,
         J <- rep(length(actual_t),length(actual_t))
         step <- k*(actual_tr - bound)
       }
-      if(type=="h"|type=="hr"){
+      else if(type=="h"|type=="hr"){
         J <- rep(NA,length(actual_t))
         step <- rep(NA,length(actual_t))
         for(j in 1:length(actual_t)){
@@ -144,7 +144,7 @@ conf_int_search <- function(fitlist,
           step[pos_t[j]] <- k*(actual_tr[pos_t[j]] - bound[pos_t[j]])
         }
       }
-      if(type=="none"){
+      else if(type=="none"){
         k <- 2/(pnorm(1-alpha)*((2*pi)^-0.5)*exp((-pnorm(1-alpha)^2)/2))
         J <- rep(1,length(actual_t))
         step <- k*(actual_tr - bound)
