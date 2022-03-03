@@ -10,6 +10,7 @@ permute(
   n_permute = 100,
   null_pars = rep(0, length(fitlist)),
   cl_var = "cl",
+  tr_var = "treat",
   rand_func = NULL,
   inv_sigma = NULL
 )
@@ -24,7 +25,7 @@ permute(
 \item{null_pars}{A vector of the same length as fitlist specifying the value(s) of the
 treatment effect parameter(s) under the null hypotheses}
 
-\item{cl_var}{String specifying the name of the column identifying the clusters/cluster-time}
+\item{cl_var}{String specifying the name of the column identifying the treatment allocation}
 
 \item{rand_func}{The name of a function that re-randomises the clusters. The function should
 produce a data frame that identifies the clusters in the treatment group under the new

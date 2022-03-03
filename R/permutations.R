@@ -8,6 +8,7 @@
 #' @param null_par A vector of the same length as fitlist specifying the value(s) of the
 #' treatment effect parameter(s) under the null hypotheses
 #' @param cl_var String specifying the name of the column identifying the clusters/cluster-time
+#' @param tr_var String specifying the name of the column identifying the treatment allocation
 #' @param rand_func String of the name of a function that re-randomises the clusters. The function should
 #' produce a data frame that identifies the clusters in the treatment group under the new
 #' randomisation scheme. The data frame can either have a single column with name cl_var or
@@ -44,6 +45,7 @@ lme_permute2 <- function(fitlist,
                          data,
                          null_par=rep(0,length(fitlist)),
                          cl_var = "cl",
+                         tr_var = "treat",
                          rand_func= NULL,
                          inv_sigma = NULL){
   if(!is(fitlist,"list"))stop("fitlist should be a list.")
@@ -78,7 +80,8 @@ lme_permute2 <- function(fitlist,
 
   for(i in 1:length(fitlist)){
     res[i] <- qscore_stat(fitlist[[i]],
-                          data,
+                          data=data,
+                          tr_var = tr_var,
                           null_par = null_par[i],
                           tr_assign = "treat_perm",
                           inv_sigma = inv_sigma)
@@ -97,6 +100,7 @@ lme_permute2 <- function(fitlist,
 #' @param null_pars A vector of the same length as fitlist specifying the value(s) of the
 #' treatment effect parameter(s) under the null hypotheses
 #' @param cl_var String specifying the name of the column identifying the clusters/cluster-time
+#' @param cl_var String specifying the name of the column identifying the treatment allocation
 #' @param rand_func The name of a function that re-randomises the clusters. The function should
 #' produce a data frame that identifies the clusters in the treatment group under the new
 #' randomisation scheme. The data frame can either have a single column with name cl_var or
@@ -134,13 +138,15 @@ permute <- function(fitlist,
                     n_permute=100,
                     null_pars=rep(0,length(fitlist)),
                     cl_var = "cl",
+                    tr_var = "treat",
                     rand_func=NULL,
                     inv_sigma = NULL){
   if(!cl_var%in%colnames(data))stop("cl_var not in colnames(data)")
-  res <- replicate(n_permute,lme_permute2(fitlist,
-                                          data,
+  res <- replicate(n_permute,lme_permute2(fitlist=fitlist,
+                                          data=data,
                                           null_par = null_pars,
                                           cl_var=cl_var,
+                                          tr_var = tr_var,
                                           rand_func = rand_func,
                                           inv_sigma = inv_sigma))
 

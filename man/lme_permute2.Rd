@@ -9,6 +9,7 @@ lme_permute2(
   data,
   null_par = rep(0, length(fitlist)),
   cl_var = "cl",
+  tr_var = "treat",
   rand_func = NULL,
   inv_sigma = NULL
 )
@@ -22,6 +23,8 @@ lme_permute2(
 treatment effect parameter(s) under the null hypotheses}
 
 \item{cl_var}{String specifying the name of the column identifying the clusters/cluster-time}
+
+\item{tr_var}{String specifying the name of the column identifying the treatment allocation}
 
 \item{rand_func}{String of the name of a function that re-randomises the clusters. The function should
 produce a data frame that identifies the clusters in the treatment group under the new

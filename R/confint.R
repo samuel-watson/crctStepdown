@@ -120,6 +120,7 @@ conf_int_search <- function(fitlist,
                         data,
                         null_par = bound,
                         cl_var=cl_var,
+                        tr_var = tr_var,
                         rand_func=rand_func,
                         inv_sigma = inv_sigma)
     actual_t <- abs(actual_t)

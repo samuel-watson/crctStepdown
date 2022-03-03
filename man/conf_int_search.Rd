@@ -13,6 +13,7 @@ conf_int_search(
   alpha = 0.05,
   plots = TRUE,
   cl_var = "cl",
+  tr_var = "treat",
   rand_func = NULL,
   verbose = TRUE,
   type = "rw",
@@ -37,6 +38,8 @@ confidence set limits (tr_eff +/- 2*SE) usually provide a good starting point.}
 \item{plots}{Logical value indicating whether to plot the search process. Default to TRUE}
 
 \item{cl_var}{String indicating the name of the column in data with the IDs of the clusters}
+
+\item{tr_var}{String indicating the name of the column in data with the treatment allocation}
 
 \item{rand_func}{The name of a function that re-randomises the clusters. The function should
 produce a data frame that identifies the clusters in the treatment group under the new
