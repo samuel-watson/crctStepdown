@@ -104,7 +104,7 @@ est_null_model <- function(fit,
 #' @param tr_assign String specifying the treatment assignment under a new permutation. If calculating
 #' the test statistics under the original treatment assignment then this should be the same
 #' as tr_var
-#' @param inv_sigma optional, inverse of the covariance matrix of the observations. If provided then the weighted q-score statistic
+#' @param inv_sigma optional, inverse of the covariance matrices of the observations. If provided then the weighted q-score statistic
 #' is calculated
 #' @return The value of the test statistic
 #' @importFrom methods is

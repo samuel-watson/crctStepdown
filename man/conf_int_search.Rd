@@ -52,7 +52,7 @@ the treatment group.  If NULL then clusters are randomised in a 1:1 ratio to tre
 \item{type}{Method of correction: options are "rw" = Romano-Wolf randomisation test based stepdown, "h"
 = Holm standard stepdown, "b" = Bonferroni, or "none" for no correction.}
 
-\item{sigma}{optional, estimated covariance matrix of the observations. If provided then the weighted q-score statistic is used.}
+\item{sigma}{optional, list of estimated covariance matrices of the observations. If provided then the weighted q-score statistic is used.}
 }
 \value{
 A vector of length p with the estimates of the limits

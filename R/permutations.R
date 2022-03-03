@@ -14,7 +14,7 @@
 #' randomisation scheme. The data frame can either have a single column with name cl_var or
 #' two columns of cl_var and t identifying the cluster ID and time period a cluster joins
 #' the treatment group. If NULL then clusters are randomised in a 1:1 ratio to treatment and control
-#' @param inv_sigma optional, inverse of the estimated covariance matrix of the observations. If provided then the weighted q-score statistic
+#' @param inv_sigma optional, list of inverse of the estimated covariance matrices of the observations. If provided then the weighted q-score statistic
 #' is calculated
 #' @return A vector of the length of fitlist with the test statistics for each model and null
 #' hypothesis
@@ -85,7 +85,7 @@ lme_permute2 <- function(fitlist,
                           cl_var = cl_var,
                           null_par = null_par[i],
                           tr_assign = "treat_perm",
-                          inv_sigma = inv_sigma)
+                          inv_sigma = inv_sigma[[i]])
   }
 
   return(res)
@@ -107,7 +107,7 @@ lme_permute2 <- function(fitlist,
 #' randomisation scheme. The data frame can either have a single column with name cl_var or
 #' two columns of cl_var and t identifying the cluster ID and time period a cluster joins
 #' the treatment group.  If NULL then clusters are randomised in a 1:1 ratio to treatment and control
-#' @param inv_sigma optional, inverse of the estimated covariance matrix of the observations. If provided then the weighted q-score statistic
+#' @param inv_sigma optional, list of inverse of the estimated covariance matrices of the observations. If provided then the weighted q-score statistic
 #' is calculated
 #' @return An array of dimension length(fitlist)*n_permute containing the test statistics
 #' for each model and each iteration

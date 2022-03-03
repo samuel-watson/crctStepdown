@@ -32,7 +32,7 @@
 #' @param verbose Logical indicating whether to provide verbose output showing progress and estimates
 #' @param type Method of correction: options are "rw" = Romano-Wolf randomisation test based stepdown, "h"
 #' = Holm standard stepdown, "b" = Bonferroni, or "none" for no correction.
-#' @param sigma optional, estimated covariance matrix of the observations. If provided then the weighted q-score statistic is used.
+#' @param sigma optional, list of estimated covariance matrices of the observations. If provided then the weighted q-score statistic is used.
 #' @return A vector of length p with the estimates of the limits
 #' @importFrom methods is
 #' @importFrom ggplot2 aes
@@ -86,12 +86,16 @@ conf_int_search <- function(fitlist,
 
   bound <- start
 
+  inv_sigma <- list()
   if(!is.null(sigma)){
-    inv_sigma <- solve(sigma)
+    for(i in 1:length(sigma)){
+      inv_sigma[[i]] <- solve(sigma[[i]])
+    }
   } else {
-    inv_sigma <- NULL
+    for(i in 1:length(fitlist)){
+      inv_sigma[[i]] <- NULL
+    }
   }
-
 
   dfv <- matrix(NA,nrow=nsteps,ncol=length(actual_tr))
   actual_t <- rep(NA,length(fitlist))
@@ -113,7 +117,7 @@ conf_int_search <- function(fitlist,
                                  tr_var = tr_var,
                                  null_par=bound[j],
                                  tr_assign = tr_var,
-                                 inv_sigma = inv_sigma)
+                                 inv_sigma = inv_sigma[[j]])
     }
 
 

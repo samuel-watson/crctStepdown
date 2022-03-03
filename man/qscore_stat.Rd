@@ -30,7 +30,7 @@ for whether the observation was under the treatment (1=treatment, 0=control)}
 the test statistics under the original treatment assignment then this should be the same
 as tr_var}
 
-\item{inv_sigma}{optional, inverse of the covariance matrix of the observations. If provided then the weighted q-score statistic
+\item{inv_sigma}{optional, inverse of the covariance matrices of the observations. If provided then the weighted q-score statistic
 is calculated}
 }
 \value{

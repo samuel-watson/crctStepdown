@@ -52,7 +52,8 @@ the treatment group. If NULL then clusters are randomised in a 1:1 ratio to trea
 
 \item{confint}{Logical indicating whether to run the confidence interval search process}
 
-\item{sigma}{optional, estimated covariance matrix of the observations. If provided then the weighted q-score statistic is used.}
+\item{sigma}{optional, list of estimated covariance matrices of the observations from the models in fitlist.
+If provided then the weighted q-score statistic is used.}
 
 \item{verbose}{Logical indicating whether to provide detailed output}
 }

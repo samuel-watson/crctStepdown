@@ -32,7 +32,7 @@ randomisation scheme. The data frame can either have a single column with name c
 two columns of cl_var and t identifying the cluster ID and time period a cluster joins
 the treatment group. If NULL then clusters are randomised in a 1:1 ratio to treatment and control}
 
-\item{inv_sigma}{optional, inverse of the estimated covariance matrix of the observations. If provided then the weighted q-score statistic
+\item{inv_sigma}{optional, list of inverse of the estimated covariance matrices of the observations. If provided then the weighted q-score statistic
 is calculated}
 }
 \value{

@@ -45,7 +45,8 @@ perm_dist <- function(out,
 #' two columns of cl_var and t identifying the cluster ID and time period a cluster joins
 #' the treatment group. If NULL then clusters are randomised in a 1:1 ratio to treatment and control
 #' @param confint Logical indicating whether to run the confidence interval search process
-#' @param sigma optional, estimated covariance matrix of the observations. If provided then the weighted q-score statistic is used.
+#' @param sigma optional, list of estimated covariance matrices of the observations from the models in fitlist.
+#' If provided then the weighted q-score statistic is used.
 #' @param verbose Logical indicating whether to provide detailed output
 #' @return A data frame with the point estimates, p-values, and confidence intervals
 #' @importFrom methods is
@@ -87,6 +88,7 @@ stepdown <- function(fitlist,
   if(alpha<=0|alpha>=1)stop("alpha should be between 0 and 1")
   if(!type%in%c("rw","b","h","br","hr","none"))stop("type should be one of rw, b, br, h, hr, or none.")
 
+  if(verbose&!is.null(sigma))cat("Covariance matrix provided, weighted quasi-score statistic will be used.\n")
   if(verbose)cat("Extracting treatment effect estimates.\n")
   tr_eff <- rep(NA,length(fitlist))
   tr_sd <- rep(NA,length(fitlist))
@@ -110,10 +112,15 @@ stepdown <- function(fitlist,
   if(verbose)cat("Point estimates: ",round(tr_eff,2),"\n")
   if(verbose)cat("Uncorrected SE: ",round(tr_sd,2),"\n")
 
+  inv_sigma <- list()
   if(!is.null(sigma)){
-    inv_sigma <- solve(sigma)
+    for(i in 1:length(sigma)){
+      inv_sigma[[i]] <- solve(sigma[[i]])
+    }
   } else {
-    inv_sigma <- NULL
+    for(i in 1:length(fitlist)){
+      inv_sigma[[i]] <- NULL
+    }
   }
 
   if(type%in%c("rw","br","hr","none")){
@@ -131,7 +138,7 @@ stepdown <- function(fitlist,
                               tr_var = tr_var,
                               cl_var = cl_var,
                               tr_assign = tr_var,
-                              inv_sigma = inv_sigma)
+                              inv_sigma = inv_sigma[[i]])
     }
 
 
@@ -242,8 +249,8 @@ stepdown <- function(fitlist,
   if(confint){
     if(verbose)cat("Searching for confidence intervals...\n")
     if(verbose)cat("Upper intervals:\n")
-    ci_upper <- conf_int_search(fitlist,
-                                data,
+    ci_upper <- conf_int_search(fitlist= fitlist,
+                                data=data,
                                 actual_tr=tr_eff,
                                 start=tr_eff+2.5*tr_sd,
                                 nsteps=nsteps,
@@ -257,8 +264,8 @@ stepdown <- function(fitlist,
                                 sigma = sigma)
 
     if(verbose)cat("\nLower intervals:\n")
-    ci_lower <- conf_int_search(fitlist,
-                                data,
+    ci_lower <- conf_int_search(fitlist=fitlist,
+                                data=data,
                                 actual_tr=tr_eff,
                                 start=tr_eff-2.5*tr_sd,
                                 nsteps=nsteps,
