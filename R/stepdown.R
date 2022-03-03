@@ -120,14 +120,14 @@ stepdown <- function(fitlist,
     nullfitlist <- list()
     for(i in 1:length(fitlist)){
       nullfitlist[[i]] <- est_null_model(fitlist[[i]],
-                                         data,
+                                         data=data,
                                          tr_var = tr_var,
                                          null_par = 0)
     }
 
     for(i in 1:length(fitlist)){
       tr_st[i] <- qscore_stat(nullfitlist[[i]],
-                              data,
+                              data=data,
                               tr_var = tr_var,
                               cl_var = cl_var,
                               tr_assign = tr_var,

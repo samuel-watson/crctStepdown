@@ -23,6 +23,7 @@
 #' @param alpha Numeric value. The process searches for the 100(1-2*alpha) confidence intervals
 #' @param plots Logical value indicating whether to plot the search process. Default to TRUE
 #' @param cl_var String indicating the name of the column in data with the IDs of the clusters
+#' @param tr_var String indicating the name of the column in data with the treatment allocation
 #' @param rand_func The name of a function that re-randomises the clusters. The function should
 #' produce a data frame that identifies the clusters in the treatment group under the new
 #' randomisation scheme. The data frame can either have a single column with name cl_var or
@@ -71,6 +72,7 @@ conf_int_search <- function(fitlist,
                             alpha=0.05,
                             plots=TRUE,
                             cl_var = "cl",
+                            tr_var = "treat",
                             rand_func = NULL,
                             verbose=TRUE,
                             type="rw",
@@ -100,7 +102,7 @@ conf_int_search <- function(fitlist,
     for(j in 1:length(fitlist)){
       nullfitlist[[j]] <- est_null_model(fitlist[[j]],
                                          data,
-                                         tr_var="treat",
+                                         tr_var=tr_var,
                                          null_par = bound[j])
     }
     dfv[i,] <- bound
@@ -108,7 +110,7 @@ conf_int_search <- function(fitlist,
       actual_t[j] <- qscore_stat(nullfitlist[[j]],
                                  data,
                                  null_par=bound[j],
-                                 tr_assign = "treat",
+                                 tr_assign = tr_var,
                                  inv_sigma = inv_sigma)
     }
 
