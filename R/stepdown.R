@@ -112,15 +112,14 @@ stepdown <- function(fitlist,
   if(verbose)cat("Point estimates: ",round(tr_eff,2),"\n")
   if(verbose)cat("Uncorrected SE: ",round(tr_sd,2),"\n")
 
-  inv_sigma <- list()
+
   if(!is.null(sigma)){
+    inv_sigma <- list()
     for(i in 1:length(sigma)){
       inv_sigma[[i]] <- solve(sigma[[i]])
     }
   } else {
-    for(i in 1:length(fitlist)){
-      inv_sigma[[i]] <- NULL
-    }
+    inv_sigma <- NULL
   }
 
   if(type%in%c("rw","br","hr","none")){
@@ -133,12 +132,17 @@ stepdown <- function(fitlist,
     }
 
     for(i in 1:length(fitlist)){
+      if(!is.null(inv_sigma)){
+        invsigma1 <- inv_sigma[[i]]
+      } else {
+        invsigma1 <- NULL
+      }
       tr_st[i] <- qscore_stat(nullfitlist[[i]],
                               data=data,
                               tr_var = tr_var,
                               cl_var = cl_var,
                               tr_assign = tr_var,
-                              inv_sigma = inv_sigma[[i]])
+                              inv_sigma = invsigma1)
     }
 
 

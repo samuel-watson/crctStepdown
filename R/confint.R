@@ -86,15 +86,13 @@ conf_int_search <- function(fitlist,
 
   bound <- start
 
-  inv_sigma <- list()
   if(!is.null(sigma)){
+    inv_sigma <- list()
     for(i in 1:length(sigma)){
       inv_sigma[[i]] <- solve(sigma[[i]])
     }
   } else {
-    for(i in 1:length(fitlist)){
-      inv_sigma[[i]] <- NULL
-    }
+    inv_sigma <- NULL
   }
 
   dfv <- matrix(NA,nrow=nsteps,ncol=length(actual_tr))
@@ -111,13 +109,18 @@ conf_int_search <- function(fitlist,
     }
     dfv[i,] <- bound
     for(j in 1:length(fitlist)){
+      if(!is.null(inv_sigma)){
+        invsigma1 <- inv_sigma[[j]]
+      } else {
+        invsigma1 <- NULL
+      }
       actual_t[j] <- qscore_stat(nullfitlist[[j]],
                                  data=data,
                                  cl_var = cl_var,
                                  tr_var = tr_var,
                                  null_par=bound[j],
                                  tr_assign = tr_var,
-                                 inv_sigma = inv_sigma[[j]])
+                                 inv_sigma = invsigma1)
     }
 
 

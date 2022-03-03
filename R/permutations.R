@@ -78,14 +78,21 @@ lme_permute2 <- function(fitlist,
 
   res <- rep(NA,length(fitlist))
 
+  is.sigma <- !is.null(inv_sigma)
+
   for(i in 1:length(fitlist)){
+    if(!is.null(inv_sigma)){
+      invsigma1 <- inv_sigma[[i]]
+    } else {
+      invsigma1 <- NULL
+    }
     res[i] <- qscore_stat(fitlist[[i]],
                           data=data,
                           tr_var = tr_var,
                           cl_var = cl_var,
                           null_par = null_par[i],
                           tr_assign = "treat_perm",
-                          inv_sigma = inv_sigma[[i]])
+                          inv_sigma = invsigma1)
   }
 
   return(res)
