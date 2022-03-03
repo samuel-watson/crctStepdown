@@ -82,6 +82,7 @@ lme_permute2 <- function(fitlist,
     res[i] <- qscore_stat(fitlist[[i]],
                           data=data,
                           tr_var = tr_var,
+                          cl_var = cl_var,
                           null_par = null_par[i],
                           tr_assign = "treat_perm",
                           inv_sigma = inv_sigma)
@@ -100,7 +101,7 @@ lme_permute2 <- function(fitlist,
 #' @param null_pars A vector of the same length as fitlist specifying the value(s) of the
 #' treatment effect parameter(s) under the null hypotheses
 #' @param cl_var String specifying the name of the column identifying the clusters/cluster-time
-#' @param cl_var String specifying the name of the column identifying the treatment allocation
+#' @param tr_var String specifying the name of the column identifying the treatment allocation
 #' @param rand_func The name of a function that re-randomises the clusters. The function should
 #' produce a data frame that identifies the clusters in the treatment group under the new
 #' randomisation scheme. The data frame can either have a single column with name cl_var or
