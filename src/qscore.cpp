@@ -1,12 +1,14 @@
-#include <Rcpp.h>
+#include <RcppArmadillo.h>
 using namespace Rcpp;
+using namespace arma;
 
+// [[Rcpp::depends(RcppArmadillo)]]
 
 // [[Rcpp::export]]
-double qscore(NumericVector y,
-              NumericVector x,
-              NumericVector T,
-              IntegerVector cl,
+double qscore(NumericVector &y,
+              NumericVector &x,
+              NumericVector &Tr,
+              IntegerVector &cl,
               int ncl) {
 
   int n = y.size();
@@ -18,7 +20,7 @@ double qscore(NumericVector y,
   pr1 = y - x;
 
   for(int i=0; i<n; i++){
-    if(T[i]==1){
+    if(Tr[i]==1){
       tot_sum += pr1[i];
     } else {
       tot_sum += -1*pr1[i];
@@ -34,10 +36,30 @@ double qscore(NumericVector y,
   return tot_sum/sqrt(cl_total);
 }
 
+// [[Rcpp::export]]
+double qscorew(const arma::vec &y,
+               const arma::vec &x,
+               const arma::mat &Tr,
+               const arma::vec &g,
+               const arma::mat &sigma,
+               const arma::uvec &cl,
+               arma::uword ncl){
 
+    arma::vec gvu(ncl);
+    arma::vec pr1 = y - x;
+    double denom = 0;
+    double total = 0;
+    arma::vec gv = sigma * g;
 
-// You can include R code blocks in C++ files processed with sourceCpp
-// (useful for testing and development). The R code will be automatically
-// run after the compilation.
-//
+    for(arma::uword j = 0; j <ncl; ++j){
+      arma::uvec ids = find(cl == j);
+      gvu(j) = arma::conv_to<double>::from(gv(ids).t() * Tr(ids,ids) * pr1(ids));
+      total += gvu(j);
+      denom += gvu(j)*gvu(j);
+    }
 
+    //Rcout << "gvu : " << gvu << "\n";
+
+    return total/sqrt(denom);
+
+}

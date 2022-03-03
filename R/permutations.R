@@ -13,6 +13,8 @@
 #' randomisation scheme. The data frame can either have a single column with name cl_var or
 #' two columns of cl_var and t identifying the cluster ID and time period a cluster joins
 #' the treatment group. If NULL then clusters are randomised in a 1:1 ratio to treatment and control
+#' @param inv_sigma optional, inverse of the estimated covariance matrix of the observations. If provided then the weighted q-score statistic
+#' is calculated
 #' @return A vector of the length of fitlist with the test statistics for each model and null
 #' hypothesis
 #' @importFrom methods is
@@ -42,7 +44,8 @@ lme_permute2 <- function(fitlist,
                          data,
                          null_par=rep(0,length(fitlist)),
                          cl_var = "cl",
-                         rand_func= NULL){
+                         rand_func= NULL,
+                         inv_sigma = NULL){
   if(!is(fitlist,"list"))stop("fitlist should be a list.")
   if(!is(data,"data.frame"))stop("data should be a data frame")
   if(length(null_par)!=length(fitlist))stop("length(null_par) should be the same as length(fitlist)")
@@ -77,7 +80,8 @@ lme_permute2 <- function(fitlist,
     res[i] <- qscore_stat(fitlist[[i]],
                           data,
                           null_par = null_par[i],
-                          tr_assign = "treat_perm")
+                          tr_assign = "treat_perm",
+                          inv_sigma = inv_sigma)
   }
 
   return(res)
@@ -98,6 +102,8 @@ lme_permute2 <- function(fitlist,
 #' randomisation scheme. The data frame can either have a single column with name cl_var or
 #' two columns of cl_var and t identifying the cluster ID and time period a cluster joins
 #' the treatment group.  If NULL then clusters are randomised in a 1:1 ratio to treatment and control
+#' @param inv_sigma optional, inverse of the estimated covariance matrix of the observations. If provided then the weighted q-score statistic
+#' is calculated
 #' @return An array of dimension length(fitlist)*n_permute containing the test statistics
 #' for each model and each iteration
 #' @examples
@@ -128,13 +134,15 @@ permute <- function(fitlist,
                     n_permute=100,
                     null_pars=rep(0,length(fitlist)),
                     cl_var = "cl",
-                    rand_func=NULL){
+                    rand_func=NULL,
+                    inv_sigma = NULL){
   if(!cl_var%in%colnames(data))stop("cl_var not in colnames(data)")
   res <- replicate(n_permute,lme_permute2(fitlist,
                                           data,
                                           null_par = null_pars,
                                           cl_var=cl_var,
-                                          rand_func = rand_func))
+                                          rand_func = rand_func,
+                                          inv_sigma = inv_sigma))
 
   return(res)
 }

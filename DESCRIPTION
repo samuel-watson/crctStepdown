@@ -1,6 +1,6 @@
 Package: crctStepdown
 Title: Univariate Analysis of Cluster Trials with Multiple Outcomes
-Version: 0.2.1
+Version: 0.3.0
 Authors@R: 
     person(given = "Sam",
            family = "Watson",
@@ -14,8 +14,9 @@ Description: Frequentist statistical inference for cluster randomised trials wit
 License: CC BY-SA 4.0 
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 LinkingTo:
+  RcppArmadillo,
   Rcpp
 Imports:
   fastglm,

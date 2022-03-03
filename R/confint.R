@@ -31,6 +31,7 @@
 #' @param verbose Logical indicating whether to provide verbose output showing progress and estimates
 #' @param type Method of correction: options are "rw" = Romano-Wolf randomisation test based stepdown, "h"
 #' = Holm standard stepdown, "b" = Bonferroni, or "none" for no correction.
+#' @param sigma optional, estimated covariance matrix of the observations. If provided then the weighted q-score statistic is used.
 #' @return A vector of length p with the estimates of the limits
 #' @importFrom methods is
 #' @importFrom ggplot2 aes
@@ -72,14 +73,23 @@ conf_int_search <- function(fitlist,
                             cl_var = "cl",
                             rand_func = NULL,
                             verbose=TRUE,
-                            type="rw"){
+                            type="rw",
+                            sigma = NULL){
+
   if(!is(fitlist,"list"))stop("fitlist should be a list.")
-  if(!all(unlist(lapply(fitlist,function(x)I(is(x,"glmerMod")|is(x,"lmerMod"))))))stop("All elements of fitlist should be lme4 model objects")
+  if(!all(unlist(lapply(fitlist,function(x)I(is(x,"glmerMod")|is(x,"lmerMod")|is(x,"glm")|is(x,"lm"))))))stop("All elements of fitlist should be glm, lm, glmer, or lmer model objects")
   p <- length(fitlist)
   if(length(actual_tr)!=p)stop("length(actual_tr)!=length(fitlist)")
   if(length(start)!=p)stop("length(actual_tr)!=length(fitlist)")
 
   bound <- start
+
+  if(!is.null(sigma)){
+    inv_sigma <- solve(sigma)
+  } else {
+    inv_sigma <- NULL
+  }
+
 
   dfv <- matrix(NA,nrow=nsteps,ncol=length(actual_tr))
   actual_t <- rep(NA,length(fitlist))
@@ -98,7 +108,8 @@ conf_int_search <- function(fitlist,
       actual_t[j] <- qscore_stat(nullfitlist[[j]],
                                  data,
                                  null_par=bound[j],
-                                 tr_assign = "treat")
+                                 tr_assign = "treat",
+                                 inv_sigma = inv_sigma)
     }
 
 
@@ -107,7 +118,8 @@ conf_int_search <- function(fitlist,
                         data,
                         null_par = bound,
                         cl_var=cl_var,
-                        rand_func=rand_func)
+                        rand_func=rand_func,
+                        inv_sigma = inv_sigma)
     actual_t <- abs(actual_t)
     val <- abs(val)
     pos_t <- order(actual_t)

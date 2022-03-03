@@ -14,7 +14,7 @@
 #' @param null_par Numeric the value of tr_var parameter under the null hypothesis
 #' @return An lm or glm model fit under the null model
 #' @importFrom methods is
-#' @importFrom stats model.matrix as.formula
+#' @importFrom stats model.matrix as.formula coef
 #' @examples
 #' out <- twoarm_sim()
 #' data <- out[[1]]
@@ -38,11 +38,20 @@ est_null_model <- function(fit,
                            data,
                            tr_var="treat",
                            null_par){
-  if(!(is(fit,"glmerMod")|is(fit,"lmerMod")))stop("fit should be glmer or lmer model object")
+  if(!(is(fit,"glmerMod")|is(fit,"lmerMod")|is(fit,"glm")|is(fit,"lm")))stop("fit should be glm, lm, glmer, or lmer model object")
   if(!is(data,"data.frame"))stop("Data should be a data frame")
   if(!tr_var%in%colnames(data))stop("tr_var not in colnames(data)")
 
-  fixeff <- names(lme4::fixef(fit))#rownames(s1$coefficients)
+  type <- ifelse(is(fit,"glmerMod")|is(fit,"lmerMod"),"mer","glm")
+
+  if(type=="mer"){
+    fixeff <- names(lme4::fixef(fit))
+    family <- fit@resp$family
+  } else if(type=="glm"){
+    fixeff <- names(coef(fit))
+    family <- stats::family(fit)
+  }
+
   fixeff <- fixeff[!fixeff%in%c(tr_var,"(Intercept)")]
   outv <- outname_fit(fit)
   #call1 <- fit@call[[1]]
@@ -64,14 +73,14 @@ est_null_model <- function(fit,
   X <- model.matrix(object=as.formula(form),data)
   Y <- data[!is.na(data[,outv]),outv]
 
-  if(is(fit,"glmerMod")){
-    family <- fit@call[[4]]
+  if(is(fit,"glmerMod")|is(fit,"glm")){
+    #family <- fit@call[[4]]
     if(all(off1==0)){
       f1 <- fastglm::fastglm(X,Y,family=family,method=3)
     } else {
       f1 <- fastglm::fastglm(X,Y,family=family,offset=off1,method=3)
     }
-  } else if(is(fit,"lmerMod")){
+  } else if(is(fit,"lmerMod")|is(fit,"lm")){
     data[,outv] <- data[,outv]-off1
     f1 <- RcppArmadillo::fastLm(X=X,y=Y)
   }
@@ -95,9 +104,11 @@ est_null_model <- function(fit,
 #' @param tr_assign String specifying the treatment assignment under a new permutation. If calculating
 #' the test statistics under the original treatment assignment then this should be the same
 #' as tr_var
+#' @param inv_sigma optional, inverse of the covariance matrix of the observations. If provided then the weighted q-score statistic
+#' is calculated
 #' @return The value of the test statistic
 #' @importFrom methods is
-#' @importFrom stats predict.lm predict.glm
+#' @importFrom stats predict.lm predict.glm family
 #' @examples
 #' out <- twoarm_sim()
 #' data <- out[[1]]
@@ -112,7 +123,8 @@ qscore_stat <- function(fit,
                         null_par=0,
                         tr_var = "treat",
                         cl_var="cl",
-                        tr_assign="treat"){
+                        tr_assign="treat",
+                        inv_sigma = NULL){
   #if(!(is(fit,"glm")|is(fit,"lm")))stop("fit should be a glm or lm model")
   if(!is(data,"data.frame"))stop("Data should be a data frame")
   if(!tr_var%in%colnames(data))stop("tr_var not in colnames(data)")
@@ -123,10 +135,16 @@ qscore_stat <- function(fit,
   outv <- outname_fit(fit)
   if(class(fit)[1] == "glm"){
     pr1 <- predict.glm(fit,data,type="response")
+    family <- family(fit)
+    xb <- predict.glm(fit,data,type="link")
   } else if(is(fit,"fastglm")|is(fit,"fastLm")){
     pr1 <- fit$fitted.values
+    family <- fit$family
+    xb <- fit$linear.predictors
   } else {
     pr1 <- predict.lm(fit,data)
+    family <- family(fit)
+    xb <- pr1
   }
 
   if(is(fit,"fastLm")|is(fit,"lm")){
@@ -135,10 +153,53 @@ qscore_stat <- function(fit,
 
   cltmp <- as.numeric(as.factor(data[,cl_var]))-1
 
-  sc <- qscore(y=data[!is.na(data[,outv]),outv],
-               x=pr1,
-               T=data[!is.na(data[,outv]),tr_assign],
-               cl=cltmp,
-               ncl=length(unique(cltmp)))
+  if(is.null(inv_sigma)){
+    sc <- qscore(y=data[!is.na(data[,outv]),outv],
+                 x=pr1,
+                 Tr=data[!is.na(data[,outv]),tr_assign],
+                 cl=cltmp,
+                 ncl=length(unique(cltmp)))
+  } else {
+    tr <- data[!is.na(data[,outv]),tr_assign]
+    tr[tr==0] <- -1
+    g <- get_G(xb,family)
+    sc <- qscorew(y=data[!is.na(data[,outv]),outv],
+                 x=pr1,
+                 Tr=diag(tr),
+                 g = g,
+                 sigma = inv_sigma,
+                 cl=cltmp,
+                 ncl=length(unique(cltmp)))
+  }
+
   return(sc)
+}
+
+#' Get inverse partial derivative of link function
+#'
+#' Returns the inverse partial derivative of the link function with respect to the linear predictor
+#'
+#' @param x vector of predicted model values on the scale of the linear predictor
+#' @param family a family object, see \link[stats]{family}. Only identity, log, logit, and probit link functions currently supported.
+#' @return A vector of values of the inverse of the partial derivative of the link function with respect to the linear predictor
+#' @examples
+#' get_G(seq(-1,1,length.out=10),family=binomial())
+#' @importFrom stats family dnorm
+#' @export
+get_G <- function(x,
+                  family){
+
+  if(!family[[2]]%in%c("identity","log","logit","probit"))stop("only identity, log, logit, and probit link functions currently supported for
+                                                               analyses using covariance matrix")
+
+  if(family[[2]] == "identity"){
+    dx <- rep(1,length(x))
+  } else if(family[[2]] == "log"){
+    dx <- exp(x)
+  } else if(family[[2]] == "logit"){
+    dx <- (exp(x)/(1+exp(x)))*(1-exp(x)/(1+exp(x)))
+  } else if(family[[2]] == "probit"){
+    dx <- -1/dnorm(x)
+  }
+  return(dx)
 }

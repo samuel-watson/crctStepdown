@@ -10,7 +10,8 @@ permute(
   n_permute = 100,
   null_pars = rep(0, length(fitlist)),
   cl_var = "cl",
-  rand_func = NULL
+  rand_func = NULL,
+  inv_sigma = NULL
 )
 }
 \arguments{
@@ -30,6 +31,9 @@ produce a data frame that identifies the clusters in the treatment group under t
 randomisation scheme. The data frame can either have a single column with name cl_var or
 two columns of cl_var and t identifying the cluster ID and time period a cluster joins
 the treatment group.  If NULL then clusters are randomised in a 1:1 ratio to treatment and control}
+
+\item{inv_sigma}{optional, inverse of the estimated covariance matrix of the observations. If provided then the weighted q-score statistic
+is calculated}
 }
 \value{
 An array of dimension length(fitlist)*n_permute containing the test statistics

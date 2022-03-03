@@ -8,7 +8,7 @@
 #' @param nT Number of time points
 #' @return A data frame with columns cl and t indicating the time
 #' @examples
-#  df <- gen_rand_order(10,7)
+#'  gen_rand_order(10,7)
 #' @export
 gen_rand_order <- function(nJ,nT){
   df_tr <- data.frame(cl=sample(1:nJ,nJ),t=NA)

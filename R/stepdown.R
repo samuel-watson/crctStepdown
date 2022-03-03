@@ -45,6 +45,7 @@ perm_dist <- function(out,
 #' two columns of cl_var and t identifying the cluster ID and time period a cluster joins
 #' the treatment group. If NULL then clusters are randomised in a 1:1 ratio to treatment and control
 #' @param confint Logical indicating whether to run the confidence interval search process
+#' @param sigma optional, estimated covariance matrix of the observations. If provided then the weighted q-score statistic is used.
 #' @param verbose Logical indicating whether to provide detailed output
 #' @return A data frame with the point estimates, p-values, and confidence intervals
 #' @importFrom methods is
@@ -76,12 +77,13 @@ stepdown <- function(fitlist,
                      type="rw",
                      rand_func=NULL,
                      confint=TRUE,
+                     sigma = NULL,
                      verbose=TRUE){
 
   if(!is(data,"data.frame"))stop("Data should be a data frame")
   if(!tr_var%in%colnames(data))stop("tr_var not in colnames(data)")
   if(!cl_var%in%colnames(data))stop("cl_var not in colnames(data)")
-  if(!all(unlist(lapply(fitlist,function(x)I(is(x,"glmerMod")|is(x,"lmerMod"))))))stop("All elements of fitlist should be lme4 model objects")
+  if(!all(unlist(lapply(fitlist,function(x)I(is(x,"glmerMod")|is(x,"lmerMod")|is(x,"glm")|is(x,"lm"))))))stop("All elements of fitlist should be glm, lm, glmer, or lmer model objects")
   if(alpha<=0|alpha>=1)stop("alpha should be between 0 and 1")
   if(!type%in%c("rw","b","h","br","hr","none"))stop("type should be one of rw, b, br, h, hr, or none.")
 
@@ -108,6 +110,12 @@ stepdown <- function(fitlist,
   if(verbose)cat("Point estimates: ",round(tr_eff,2),"\n")
   if(verbose)cat("Uncorrected SE: ",round(tr_sd,2),"\n")
 
+  if(!is.null(sigma)){
+    inv_sigma <- solve(sigma)
+  } else {
+    inv_sigma <- NULL
+  }
+
   if(type%in%c("rw","br","hr","none")){
     nullfitlist <- list()
     for(i in 1:length(fitlist)){
@@ -122,7 +130,8 @@ stepdown <- function(fitlist,
                               data,
                               tr_var = tr_var,
                               cl_var = cl_var,
-                              tr_assign = tr_var)
+                              tr_assign = tr_var,
+                              inv_sigma = inv_sigma)
     }
 
 
@@ -132,7 +141,8 @@ stepdown <- function(fitlist,
                    data,
                    n_permute = n_permute,
                    cl_var = cl_var,
-                   rand_func=rand_func)
+                   rand_func=rand_func,
+                   inv_sigma = inv_sigma)
     anyna <- apply(out,2,function(x)any(is.na(x)))
     out <- out[,!anyna]
     out <- abs(out)
@@ -241,7 +251,8 @@ stepdown <- function(fitlist,
                                 cl_var = cl_var,
                                 rand_func=rand_func,
                                 verbose = verbose,
-                                type=type)
+                                type=type,
+                                sigma = sigma)
 
     if(verbose)cat("\nLower intervals:\n")
     ci_lower <- conf_int_search(fitlist,
@@ -254,7 +265,8 @@ stepdown <- function(fitlist,
                                 cl_var = cl_var,
                                 rand_func=rand_func,
                                 verbose = verbose,
-                                type=type)
+                                type=type,
+                                sigma = sigma)
 
   } else {
     ci_upper <- rep(NA,length(tr_p))
