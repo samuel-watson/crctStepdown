@@ -108,7 +108,9 @@ conf_int_search <- function(fitlist,
     dfv[i,] <- bound
     for(j in 1:length(fitlist)){
       actual_t[j] <- qscore_stat(nullfitlist[[j]],
-                                 data,
+                                 data=data,
+                                 cl_var = cl_var,
+                                 tr_var = tr_var,
                                  null_par=bound[j],
                                  tr_assign = tr_var,
                                  inv_sigma = inv_sigma)
