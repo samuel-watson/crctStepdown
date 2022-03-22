@@ -44,9 +44,12 @@ est_null_model <- function(fit,
 
   type <- ifelse(is(fit,"glmerMod")|is(fit,"lmerMod"),"mer","glm")
 
-  if(type=="mer"){
+  if(is(fit,"glmerMod")){
     fixeff <- names(lme4::fixef(fit))
     family <- fit@resp$family
+  } else if(is(fit,"lmerMod")){
+    fixeff <- names(lme4::fixef(fit))
+    family <- stats::gaussian()
   } else if(type=="glm"){
     fixeff <- names(coef(fit))
     family <- stats::family(fit)
