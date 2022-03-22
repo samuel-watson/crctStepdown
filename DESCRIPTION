@@ -1,6 +1,6 @@
 Package: crctStepdown
 Title: Univariate Analysis of Cluster Trials with Multiple Outcomes
-Version: 0.3.0
+Version: 0.3.1
 Authors@R: 
     person(given = "Sam",
            family = "Watson",
