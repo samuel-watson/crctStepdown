@@ -42,8 +42,6 @@ est_null_model <- function(fit,
   if(!is(data,"data.frame"))stop("Data should be a data frame")
   if(!tr_var%in%colnames(data))stop("tr_var not in colnames(data)")
 
-  type <- ifelse(is(fit,"glmerMod")|is(fit,"lmerMod"),"mer","glm")
-
   if(is(fit,"glmerMod")){
     fixeff <- names(lme4::fixef(fit))
     family <- fit@resp$family
