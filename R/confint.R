@@ -86,10 +86,26 @@ conf_int_search <- function(fitlist,
 
   bound <- start
 
+  # if(!is.null(sigma)){
+  #   inv_sigma <- list()
+  #   for(i in 1:length(sigma)){
+  #     inv_sigma[[i]] <- solve(sigma[[i]])
+  #   }
+  # } else {
+  #   inv_sigma <- NULL
+  # }
+
   if(!is.null(sigma)){
     inv_sigma <- list()
     for(i in 1:length(sigma)){
-      inv_sigma[[i]] <- solve(sigma[[i]])
+      if(is(sigma[[i]],"list")){
+        inv_sigma[[i]] <- list()
+        for(j in 1:length(sigma[[i]])){
+          inv_sigma[[i]][[j]] <- solve(sigma[[i]][[j]])
+        }
+      } else {
+        inv_sigma[[i]] <- solve(sigma[[i]])
+      }
     }
   } else {
     inv_sigma <- NULL

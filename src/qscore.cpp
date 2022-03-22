@@ -37,7 +37,7 @@ double qscore(NumericVector &y,
 }
 
 // [[Rcpp::export]]
-double qscorew(const arma::vec &y,
+arma::vec qscorew(const arma::vec &y,
                const arma::vec &x,
                const arma::mat &Tr,
                const arma::vec &g,
@@ -58,8 +58,11 @@ double qscorew(const arma::vec &y,
       denom += gvu(j)*gvu(j);
     }
 
+    arma::vec res(2,fill::zeros);
+    res(0) = total;
+    res(1) = denom;
     //Rcout << "gvu : " << gvu << "\n";
 
-    return total/sqrt(denom);
+    return res;
 
 }

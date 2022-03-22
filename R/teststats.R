@@ -48,7 +48,7 @@ est_null_model <- function(fit,
   } else if(is(fit,"lmerMod")){
     fixeff <- names(lme4::fixef(fit))
     family <- stats::gaussian()
-  } else if(type=="glm"){
+  } else if(is(fit,"glm")){
     fixeff <- names(coef(fit))
     family <- stats::family(fit)
   }
@@ -164,13 +164,31 @@ qscore_stat <- function(fit,
     tr <- data[!is.na(data[,outv]),tr_assign]
     tr[tr==0] <- -1
     g <- get_G(xb,family)
-    sc <- qscorew(y=data[!is.na(data[,outv]),outv],
-                 x=pr1,
-                 Tr=diag(tr),
-                 g = g,
-                 sigma = inv_sigma,
-                 cl=cltmp,
-                 ncl=length(unique(cltmp)))
+    if(is(inv_sigma,"list")){
+      sccl <- list()
+      for(j in 1:length(inv_sigma)){
+        sccl[[j]] <- qscorew(y=data[!is.na(data[,outv]),outv][cltmp == (j-1)],
+                      x=pr1[cltmp == (j-1)],
+                      Tr=diag(tr[cltmp == (j-1)]),
+                      g = g[cltmp == (j-1)],
+                      sigma = inv_sigma[[j]],
+                      cl=rep(0,length(cltmp[cltmp == (j-1)])),
+                      ncl=1)
+      }
+      numer <- sum(unlist(lapply(sccl,function(x)x[1])))
+      denom <- sum(unlist(lapply(sccl,function(x)x[2])))
+      sc <- numer/sqrt(denom)
+    } else {
+      sc <- qscorew(y=data[!is.na(data[,outv]),outv],
+                    x=pr1,
+                    Tr=diag(tr),
+                    g = g,
+                    sigma = inv_sigma,
+                    cl=cltmp,
+                    ncl=length(unique(cltmp)))
+      sc <- sc[1]/sqrt(sc[2])
+    }
+
   }
 
   return(sc)
