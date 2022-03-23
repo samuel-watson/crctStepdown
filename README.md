@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/samuel-watson/crctStepdown.svg?branch=master)](https://travis-ci.org/samuel-watson/crctStepdown)
+[![cran version](http://www.r-pkg.org/badges/version/crctStepdown)](https://cran.r-project.org/web/packages/crctStepdown)
+
 # crctStepdown
 
 Permutation test inference for generalised linear mixed models including corrections for multiple testing. The package was originally named after the permutation
