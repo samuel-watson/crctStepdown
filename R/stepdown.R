@@ -112,9 +112,12 @@ stepdown <- function(fitlist,
   if(verbose)cat("Point estimates: ",round(tr_eff,2),"\n")
   if(verbose)cat("Uncorrected SE: ",round(tr_sd,2),"\n")
 
+  form.cl <- paste0("~factor(",cl_var,")-1")
+  Z <- model.matrix(as.formula(form.cl),data=data)
+  inv_sigma <- list()
 
   if(!is.null(sigma)){
-    inv_sigma <- list()
+    w.opt <- TRUE
     for(i in 1:length(sigma)){
       if(is(sigma[[i]],"list")){
         inv_sigma[[i]] <- list()
@@ -126,48 +129,104 @@ stepdown <- function(fitlist,
       }
     }
   } else {
-    inv_sigma <- NULL
+    w.opt <- FALSE
+    for(i in 1:length(fitlist)){
+      inv_sigma[[i]] <- as.matrix(1)
+    }
   }
+
+  new_rand <- function(){
+    if(is.null(rand_func)){
+      df_tr <- sample(unique(data[,cl_var]),ceiling(length(unique(data[,cl_var]))/2))
+      trnew <- rep(0,nrow(data))
+      trnew[data[,cl_var] %in% df_tr] <- 1
+    } else {
+      df_tr <- do.call(rand_func,list(nJ=length(unique(data[,cl_var])),
+                                      nT=length(unique(data$t))))
+      trnew <- rep(0,nrow(data))
+      if(!is(df_tr,"data.frame")){
+        stop("rand_func must produce a data frame")
+      } else {
+        if("t" %in% colnames(df_tr)){
+          for(i in 1:nrow(df_tr)){
+            trnew[data[,cl_var]==df_tr$cl[i]&data$t>=df_tr$t[i]] <- 1
+          }
+        } else {
+          trnew[data[,cl_var] %in% df_tr[,cl_var]] <- 1
+        }
+      }
+    }
+    return(trnew)
+  }
+
+  if(verbose)cat("Starting permutations...\n")
+  trmat <- sapply(1:n_permute,function(i)new_rand())
+  dtr <- data[,tr_var]
+  dtr[dtr==0] <- -1
 
   if(type%in%c("rw","br","hr","none")){
     nullfitlist <- list()
+    Xnull <- list()
+    familylist <- list()
+    xb <- list()
+    ypred <- list()
+    y <- list()
+    resids <- list()
+    family2list <- list()
+    trlist <- list()
+    qtest <- list()
     for(i in 1:length(fitlist)){
-      nullfitlist[[i]] <- est_null_model(fitlist[[i]],
-                                         data=data,
-                                         tr_var = tr_var,
-                                         null_par = 0)
-    }
+      out <- est_null_model(fitlist[[i]],
+                            data=data,
+                            tr_var = tr_var,
+                            null_par = 0)
 
-    for(i in 1:length(fitlist)){
-      if(!is.null(inv_sigma)){
-        invsigma1 <- inv_sigma[[i]]
+      nullfitlist[[i]] <- out$fit
+      Xnull[[i]] <- out$X
+      familylist[[i]] <- out$family
+      if(out$family[[1]] == "gaussian"){
+        xb[[i]] <- out$fit$fitted.values
       } else {
-        invsigma1 <- NULL
+        xb[[i]] <- out$fit$linear.predictors
       }
-      tr_st[i] <- qscore_stat(nullfitlist[[i]],
-                              data=data,
-                              tr_var = tr_var,
-                              cl_var = cl_var,
-                              tr_assign = tr_var,
-                              inv_sigma = invsigma1)
+      y[[i]] <- out$y
+      ypred[[i]] <- out$family$linkinv(xb[[i]])
+      resids[[i]] <- out$y - ypred[[i]]
+      family2list[[i]] <- out$family[[2]]
+
+      # if(!is.null(inv_sigma)){
+      #   invS <- inv_sigma[[i]]
+      #   w.opt <- TRUE
+      # } else {
+      #   invS <- 1
+      #   w.opt <- FALSE
+      # }
+      tr_st[i] <- qscore_impl(as.vector(resids[[i]]),
+                              as.vector(dtr),
+                              as.vector(xb[[i]]),
+                              as.matrix(inv_sigma[[i]]),
+                              as.character(family2list[[i]]),
+                              Z,
+                              w.opt)
+
+      qtest[[i]] <- as.vector(permutation_test_impl(as.vector(resids[[i]]),
+                                                    as.matrix(trmat),
+                                                    as.vector(xb[[i]]),
+                                                    as.matrix(inv_sigma[[i]]),
+                                                    as.character(family2list[[i]]),
+                                                    Z,
+                                                    w.opt,
+                                                    as.numeric(n_permute),
+                                                    verbose))
     }
 
+    out <- Reduce(rbind,qtest)
 
-    #cat("ICC: ",round(tr_icc,3),"\n")
-    if(verbose)cat("Starting permutations...\n")
-    out <- permute(nullfitlist,
-                   data,
-                   n_permute = n_permute,
-                   cl_var = cl_var,
-                   tr_var = tr_var,
-                   rand_func=rand_func,
-                   inv_sigma = inv_sigma)
-    anyna <- apply(out,2,function(x)any(is.na(x)))
-    out <- out[,!anyna]
+
     out <- abs(out)
     tr_st <- abs(tr_st)
     if(verbose)cat("Test statistics: ",round(tr_st,2),"\n")
-    # print(apply(out,1,sd))
+
 
     #first determine corrected p-values
     #test statistics
@@ -188,7 +247,9 @@ stepdown <- function(fitlist,
             ggplot2::geom_vline(xintercept = test_stat,color="red")+
             ggplot2::labs(x=paste0(i,"th largest statistic"))+
             ggplot2::annotate("text",x = Inf, y= Inf,hjust=1,vjust=1,color="red",
-                              label=paste0("p = ",round(tr_p[which(ord_t==(length(ord_t) - (i-1)))],2)))
+                              label=paste0("p = ",round(tr_p[which(ord_t==(length(ord_t) - (i-1)))],2)))+
+            ggplot2::theme_bw()+
+            ggplot2::theme(panel.grid = ggplot2::element_blank())
         }
 
       }
@@ -204,7 +265,9 @@ stepdown <- function(fitlist,
           plist[[i]] <- ggplot2::qplot(vals,bins=30) +
             ggplot2::geom_vline(xintercept = tr_st[i],color="red")+
             ggplot2::annotate("text",x = Inf, y= Inf,hjust=1,vjust=1,color="red",
-                              label=paste0("p = ",round(tr_p[i],2)))
+                              label=paste0("p = ",round(tr_p[i],2)))+
+            ggplot2::theme_bw()+
+            ggplot2::theme(panel.grid = ggplot2::element_blank())
         }
       }
     }
@@ -220,7 +283,9 @@ stepdown <- function(fitlist,
             ggplot2::geom_vline(xintercept = tr_st[ord_t[i]],color="red")+
             ggplot2::labs(x=paste0(i,"th largest statistic"))+
             ggplot2::annotate("text",x = Inf, y= Inf,hjust=1,vjust=1,color="red",
-                              label=paste0("p = ",round(tr_p[ord_t[i]],2)))
+                              label=paste0("p = ",round(tr_p[ord_t[i]],2)))+
+            ggplot2::theme_bw()+
+            ggplot2::theme(panel.grid = ggplot2::element_blank())
         }
       }
     }
@@ -234,7 +299,9 @@ stepdown <- function(fitlist,
           plist[[i]] <- ggplot2::qplot(vals,bins=30) +
             ggplot2::geom_vline(xintercept = tr_st[i],color="red")+
             ggplot2::annotate("text",x = Inf, y= Inf,hjust=1,vjust=1,color="red",
-                              label=paste0("p = ",round(tr_p[i],2)))
+                              label=paste0("p = ",round(tr_p[i],2)))+
+            ggplot2::theme_bw()+
+            ggplot2::theme(panel.grid = ggplot2::element_blank())
         }
       }
     }
@@ -260,34 +327,64 @@ stepdown <- function(fitlist,
   if(confint){
     if(verbose)cat("Searching for confidence intervals...\n")
     if(verbose)cat("Upper intervals:\n")
-    ci_upper <- conf_int_search(fitlist= fitlist,
-                                data=data,
-                                actual_tr=tr_eff,
-                                start=tr_eff+2.5*tr_sd,
-                                nsteps=nsteps,
-                                alpha=alpha,
-                                plots = plots,
-                                cl_var = cl_var,
-                                tr_var = tr_var,
-                                rand_func=rand_func,
-                                verbose = verbose,
-                                type=type,
-                                sigma = sigma)
 
+    if(verbose)cat("Lower\n")
+    trmat <- sapply(1:nsteps,function(i)new_rand())
     if(verbose)cat("\nLower intervals:\n")
-    ci_lower <- conf_int_search(fitlist=fitlist,
-                                data=data,
-                                actual_tr=tr_eff,
-                                start=tr_eff-2.5*tr_sd,
-                                nsteps=nsteps,
-                                alpha=alpha,
-                                plots=plots,
-                                cl_var = cl_var,
-                                tr_var = tr_var,
-                                rand_func=rand_func,
-                                verbose = verbose,
-                                type=type,
-                                sigma = sigma)
+familylist <<- familylist
+    ci_lower <- confint_search(start = tr_eff-3*tr_sd,
+                            b =  tr_eff,
+                            n = nrow(data),
+                            nmodel = length(fitlist),
+                            Xnull_= Xnull,
+                            y = y,
+                            tr_ = as.vector(data[,tr_var]),
+                            new_tr_mat = as.matrix(trmat),
+                            invS = inv_sigma,
+                            family = familylist,
+                            family2 = family2list,
+                            Z = Z,
+                            type = type,
+                            nsteps=nsteps,
+                            weight = w.opt,
+                            alpha = alpha,
+                            verbose = verbose)
+
+
+    #out <<- ci_lower
+    if(verbose)cat("\nUpper\n")
+    ci_upper <- confint_search(start = tr_eff+3*tr_sd,
+                            b =  tr_eff,
+                            n = nrow(data),
+                            nmodel = length(fitlist),
+                            Xnull_= Xnull,
+                            y = y,
+                            tr_ = as.vector(data[,tr_var]),
+                            new_tr_mat = as.matrix(trmat),
+                            invS = inv_sigma,
+                            family = familylist,
+                            family2 = family2list,
+                            Z = Z,
+                            type = type,
+                            nsteps=nsteps,
+                            weight = w.opt,
+                            alpha = alpha,
+                            verbose = verbose)
+
+    if(plots){
+      dfl <- as.data.frame(ci_lower$values)
+      dfu <- as.data.frame(ci_upper$values)
+      dfl <-  reshape2::melt(dfl, id.vars=NULL)
+      dfu <- reshape2::melt(dfu, id.vars=NULL)
+      dfl$iter <- dfu$iter <- 1:nsteps
+      dfl$interval <- "lower"
+      dfu$interval <- "upper"
+      print(ggplot2::ggplot(data=rbind(dfu,dfl),ggplot2::aes(x=iter,y=value))+
+              ggplot2::geom_line()+
+              ggplot2::facet_grid(interval~variable))+
+        ggplot2::theme_bw()+
+        ggplot2::theme(panel.grid = ggplot2::element_blank())
+    }
 
   } else {
     ci_upper <- rep(NA,length(tr_p))
@@ -298,10 +395,39 @@ stepdown <- function(fitlist,
   if(verbose)cat("\nCompleted!\n")
   results <- data.frame(model=1:length(tr_eff),
                         mean = round(tr_eff,3),
-                        lower_ci = round(ci_lower,3),
-                        upper_ci = round(ci_upper,3),
+                        lower_ci = round(ci_lower$bound,3),
+                        upper_ci = round(ci_upper$bound,3),
                         p_value = round(tr_p,3),
                         icc = round(tr_icc,3))
 
   return(results)
+}
+
+#' Extracts the dependent variable name from glm, lm, or mer model
+#'
+#' @param fit A fitted model object of class glm, lm, or *merMod
+#' @return A string with the name of the dependent variable from the model
+#' @importFrom methods is
+#' @examples
+#' out <- twoarm_sim()
+#' data <- out[[1]]
+#' fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,
+#'                     data=data,
+#'                     family="poisson")
+#' outname_fit(fit1)
+#' @export
+outname_fit <- function(fit){
+  if(!(is(fit,"glm")|!is(fit,"lm")|is(fit,"glmerMod")|is(fit,"lmerMod")))
+    stop("Model class should be glm, lm, or mer")
+
+  if(is(fit,"glm")){
+    outv <- strsplit(as.character(fit$formula), " ")[[2]][1]
+  } else if(is(fit,"lm")){
+    outv <- strsplit(as.character(fit$call[[2]])," ")[[2]][1]
+  } else if(grepl("mer",class(fit))){
+    outv <- strsplit(as.character(fit@call[[2]])," ")[[2]]
+  } else if(is(fit,"fastglm")|is(fit,"fastLm")){
+    outv <- fit$outv
+  }
+  return(outv)
 }

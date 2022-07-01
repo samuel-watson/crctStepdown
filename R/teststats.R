@@ -88,7 +88,7 @@ est_null_model <- function(fit,
 
   f1$outv <- outv
 
-  return(f1)
+  return(list(fit=f1,X=X,y=Y,family=family))
 }
 
 #' Calculates the randomisation test statistic

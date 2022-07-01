@@ -1,6 +1,6 @@
 Package: crctStepdown
 Title: Univariate Analysis of Cluster Trials with Multiple Outcomes
-Version: 0.3.1
+Version: 0.4.0
 Authors@R: 
     person(given = "Sam",
            family = "Watson",
@@ -16,8 +16,11 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 LinkingTo:
-  RcppArmadillo,
-  Rcpp
+  Rcpp (>= 0.12.0),
+    RcppArmadillo,
+    RcppEigen (>= 0.3.3.3.0),
+    RcppParallel (>= 5.0.1),
+    fastglm (>= 0.0.3)
 Imports:
   fastglm,
   Rcpp,

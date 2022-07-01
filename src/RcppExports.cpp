@@ -2,6 +2,7 @@
 // Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #include <RcppArmadillo.h>
+#include <RcppEigen.h>
 #include <Rcpp.h>
 
 using namespace Rcpp;
@@ -11,42 +12,74 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// qscore
-double qscore(NumericVector& y, NumericVector& x, NumericVector& Tr, IntegerVector& cl, int ncl);
-RcppExport SEXP _crctStepdown_qscore(SEXP ySEXP, SEXP xSEXP, SEXP TrSEXP, SEXP clSEXP, SEXP nclSEXP) {
+// qscore_impl
+double qscore_impl(const arma::vec& resids, arma::vec tr, const arma::vec& xb, const arma::mat& invS, const std::string& family2, const arma::mat& Z, bool weight);
+RcppExport SEXP _crctStepdown_qscore_impl(SEXP residsSEXP, SEXP trSEXP, SEXP xbSEXP, SEXP invSSEXP, SEXP family2SEXP, SEXP ZSEXP, SEXP weightSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector& >::type y(ySEXP);
-    Rcpp::traits::input_parameter< NumericVector& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< NumericVector& >::type Tr(TrSEXP);
-    Rcpp::traits::input_parameter< IntegerVector& >::type cl(clSEXP);
-    Rcpp::traits::input_parameter< int >::type ncl(nclSEXP);
-    rcpp_result_gen = Rcpp::wrap(qscore(y, x, Tr, cl, ncl));
+    Rcpp::traits::input_parameter< const arma::vec& >::type resids(residsSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type tr(trSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type xb(xbSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type invS(invSSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type family2(family2SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< bool >::type weight(weightSEXP);
+    rcpp_result_gen = Rcpp::wrap(qscore_impl(resids, tr, xb, invS, family2, Z, weight));
     return rcpp_result_gen;
 END_RCPP
 }
-// qscorew
-double qscorew(const arma::vec& y, const arma::vec& x, const arma::mat& Tr, const arma::vec& g, const arma::mat& sigma, const arma::uvec& cl, arma::uword ncl);
-RcppExport SEXP _crctStepdown_qscorew(SEXP ySEXP, SEXP xSEXP, SEXP TrSEXP, SEXP gSEXP, SEXP sigmaSEXP, SEXP clSEXP, SEXP nclSEXP) {
+// permutation_test_impl
+arma::vec permutation_test_impl(const arma::vec& resids, const arma::mat& tr_mat, const arma::vec& xb, const arma::mat& invS, const std::string& family2, const arma::mat& Z, bool weight, int iter, bool verbose);
+RcppExport SEXP _crctStepdown_permutation_test_impl(SEXP residsSEXP, SEXP tr_matSEXP, SEXP xbSEXP, SEXP invSSEXP, SEXP family2SEXP, SEXP ZSEXP, SEXP weightSEXP, SEXP iterSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::vec& >::type y(ySEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type Tr(TrSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type g(gSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< const arma::uvec& >::type cl(clSEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type ncl(nclSEXP);
-    rcpp_result_gen = Rcpp::wrap(qscorew(y, x, Tr, g, sigma, cl, ncl));
+    Rcpp::traits::input_parameter< const arma::vec& >::type resids(residsSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type tr_mat(tr_matSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type xb(xbSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type invS(invSSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type family2(family2SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< bool >::type weight(weightSEXP);
+    Rcpp::traits::input_parameter< int >::type iter(iterSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(permutation_test_impl(resids, tr_mat, xb, invS, family2, Z, weight, iter, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// confint_search
+Rcpp::List confint_search(arma::vec start, arma::vec b, int n, arma::uword nmodel, const Rcpp::List& Xnull_, const Rcpp::List& y, const Rcpp::NumericVector& tr_, const arma::mat& new_tr_mat, const Rcpp::List& invS, Rcpp::List family, Rcpp::List family2, const arma::mat& Z, const Rcpp::String& type, int nsteps, bool weight, double alpha, bool verbose);
+RcppExport SEXP _crctStepdown_confint_search(SEXP startSEXP, SEXP bSEXP, SEXP nSEXP, SEXP nmodelSEXP, SEXP Xnull_SEXP, SEXP ySEXP, SEXP tr_SEXP, SEXP new_tr_matSEXP, SEXP invSSEXP, SEXP familySEXP, SEXP family2SEXP, SEXP ZSEXP, SEXP typeSEXP, SEXP nstepsSEXP, SEXP weightSEXP, SEXP alphaSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type start(startSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type b(bSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type nmodel(nmodelSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type Xnull_(Xnull_SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type tr_(tr_SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type new_tr_mat(new_tr_matSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type invS(invSSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type family(familySEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type family2(family2SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::String& >::type type(typeSEXP);
+    Rcpp::traits::input_parameter< int >::type nsteps(nstepsSEXP);
+    Rcpp::traits::input_parameter< bool >::type weight(weightSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(confint_search(start, b, n, nmodel, Xnull_, y, tr_, new_tr_mat, invS, family, family2, Z, type, nsteps, weight, alpha, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_crctStepdown_qscore", (DL_FUNC) &_crctStepdown_qscore, 5},
-    {"_crctStepdown_qscorew", (DL_FUNC) &_crctStepdown_qscorew, 7},
+    {"_crctStepdown_qscore_impl", (DL_FUNC) &_crctStepdown_qscore_impl, 7},
+    {"_crctStepdown_permutation_test_impl", (DL_FUNC) &_crctStepdown_permutation_test_impl, 9},
+    {"_crctStepdown_confint_search", (DL_FUNC) &_crctStepdown_confint_search, 17},
     {NULL, NULL, 0}
 };
 
