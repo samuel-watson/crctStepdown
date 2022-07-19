@@ -319,9 +319,17 @@ Rcpp::List confint_search(arma::vec start,
       k_tmp = gaussian_cdf(1-alpha);
       k = 2*(sqrt(M_2PI))/(k_tmp*exp((-k_tmp*k_tmp)/2));
       Jval.fill(1);
+      bool reject_rest = false;
       for(arma::uword j = 0; j < nmodel; j++){
-        rjct(pos_t(nmodel - 1 - j)) = qstat(pos_t(nmodel-1-j)) > arma::max(qtest(pos_t.subvec(0,(nmodel - 1 - j))));
+        if(!reject_rest){
+          rjct(pos_t(nmodel - 1 - j)) = qstat(pos_t(nmodel-1-j)) >= arma::max(qtest(pos_t.subvec(0,(nmodel - 1 - j))));
+        } else {
+          rjct(pos_t(nmodel - 1 - j)) = false;
+        }
         step(pos_t(nmodel - 1 - j)) = k *(b(pos_t(nmodel - 1 - j)) - bound(pos_t(nmodel - 1 - j)));
+        if(!rjct(pos_t(nmodel - 1 - j))){
+          reject_rest = true;
+        }
       }
     } else {
       for(arma::uword j = 0; j < nmodel; j++){
@@ -340,7 +348,7 @@ Rcpp::List confint_search(arma::vec start,
           k_tmp = gaussian_cdf(1-alpha/(nmodel-j));
           k = 2*(sqrt(M_2PI))/(k_tmp*exp((-k_tmp*k_tmp)/2));
           step(pos_t(nmodel - 1 - j)) = k *(b(pos_t(nmodel - 1 - j)) - bound(pos_t(nmodel - 1 - j)));
-          Jval(j) = nmodel-j;
+          Jval(pos_t(nmodel - 1 - j)) = nmodel-j;
         }
       }
       if(type=="none"){
