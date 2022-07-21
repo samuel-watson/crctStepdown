@@ -39,8 +39,9 @@ perm_dist <- function(out,
 #' @param type Method of correction: options are "rw" = Romano-Wolf randomisation test based stepdown, "h"
 #' = Holm standard stepdown, "h" = Holm stepdown using randomisation test, "b" = standard Bonferroni, "br" =
 #' Bonerroni using randomisation test, or "none" = randomisation test with no correction.
-#' @param rand_func String of the name of a function that re-randomises the clusters. The function should
-#' produce a data frame that identifies the clusters in the treatment group under the new
+#' @param rand_func String of the name of a function that re-randomises the clusters. The function
+#' must take the arguments `nJ` for the number of clusters and `nT` for the number of time periods.
+#' The function should produce a data frame that identifies the clusters in the treatment group under the new
 #' randomisation scheme. The data frame can either have a single column with name cl_var or
 #' two columns of cl_var and t identifying the cluster ID and time period a cluster joins
 #' the treatment group. If NULL then clusters are randomised in a 1:1 ratio to treatment and control
@@ -326,12 +327,11 @@ stepdown <- function(fitlist,
   # next use search algorithm to determine 95% confidence interval
   if(confint){
     if(verbose)cat("Searching for confidence intervals...\n")
-    if(verbose)cat("Upper intervals:\n")
-
-    if(verbose)cat("Lower\n")
     trmat <- sapply(1:nsteps,function(i)new_rand())
-    if(verbose)cat("\nLower intervals:\n")
-familylist <<- familylist
+    trmat <<- trmat
+    if(verbose)cat("Lower\n")
+
+
     ci_lower <- confint_search(start = tr_eff-3*tr_sd,
                             b =  tr_eff,
                             n = nrow(data),
@@ -417,8 +417,8 @@ familylist <<- familylist
 #' outname_fit(fit1)
 #' @export
 outname_fit <- function(fit){
-  if(!(is(fit,"glm")|!is(fit,"lm")|is(fit,"glmerMod")|is(fit,"lmerMod")))
-    stop("Model class should be glm, lm, or mer")
+  if(!(is(fit,"glm")|is(fit,"lm")|is(fit,"glmerMod")|is(fit,"lmerMod")))
+    stop("Model class should be glm, lm, or merMod")
 
   if(is(fit,"glm")){
     outv <- strsplit(as.character(fit$formula), " ")[[2]][1]

@@ -300,12 +300,18 @@ Rcpp::List confint_search(arma::vec start,
                                         100);
       const Map<VectorXd>  xb(as<Map<VectorXd> >(result["linear.predictors"]));
       Rcpp::NumericVector xbvec(wrap(xb));
+      // const Map<VectorXd>  coefs(as<Map<VectorXd> >(result["coefficients"]));
+      // Rcpp::NumericVector coefvec(wrap(coefs));
+      // if(j==0)Rcpp::Rcout << "\n Xs: " << Xs;
+      // if(j==0)Rcpp::Rcout << "\n cef: " << coefvec;
+      // if(j==0)Rcpp::Rcout << "\n x: " << xbvec;
       arma::vec ypred = Rcpp::as<arma::vec>(linkinv(xb));
       arma::vec resids = as<arma::vec>(y[j]) - ypred;
       qstat(j) = qscore_impl(resids, tr, as<arma::vec>(xbvec), as<arma::mat>(invS[j]), as<std::string>(family2[j]), Z, weight);
       qtest(j) = qscore_impl(resids, new_tr, as<arma::vec>(xbvec), as<arma::mat>(invS[j]), as<std::string>(family2[j]), Z, weight);
     }
-
+    // Rcpp::Rcout << "\n qstat: " << qstat.t();
+    // Rcpp::Rcout << "\n qtest: " << qtest.t();
     //Rcpp::Rcout << "\nDone fits and stats" << qstat.t() << "and " << qtest.t();
     arma::uvec pos_t = arma::sort_index(qstat);
 

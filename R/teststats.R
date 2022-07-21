@@ -51,6 +51,9 @@ est_null_model <- function(fit,
   } else if(is(fit,"glm")){
     fixeff <- names(coef(fit))
     family <- stats::family(fit)
+  } else if(is(fit,"lm")){
+    fixeff <- names(coef(fit))
+    family <- stats::gaussian()
   }
 
   fixeff <- fixeff[!fixeff%in%c(tr_var,"(Intercept)")]
