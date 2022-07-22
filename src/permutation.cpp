@@ -338,23 +338,30 @@ Rcpp::List confint_search(arma::vec start,
         }
       }
     } else {
-      for(arma::uword j = 0; j < nmodel; j++){
-        rjct(j) = qstat(j) > qtest(j);
-      }
       if(type == "b" || type == "br"){
         k_tmp = gaussian_cdf(1-alpha/nmodel);
         k = 2*(sqrt(M_2PI))/(k_tmp*exp((-k_tmp*k_tmp)/2));
         Jval.fill(nmodel);
         for(arma::uword j = 0; j < nmodel; j++){
+          rjct(j) = qstat(j) > qtest(j);
           step(j) = k *(b(j) - bound(j));
         }
       }
       if(type == "h"|| type=="hr"){
+        bool reject_rest = false;
         for(arma::uword j = 0; j < nmodel; j++){
+          if(!reject_rest){
+            rjct(pos_t(nmodel - 1 - j)) = qstat(pos_t(nmodel-1-j)) >= qtest(pos_t(nmodel - 1 - j));
+          } else {
+            rjct(pos_t(nmodel - 1 - j)) = false;
+          }
           k_tmp = gaussian_cdf(1-alpha/(nmodel-j));
           k = 2*(sqrt(M_2PI))/(k_tmp*exp((-k_tmp*k_tmp)/2));
           step(pos_t(nmodel - 1 - j)) = k *(b(pos_t(nmodel - 1 - j)) - bound(pos_t(nmodel - 1 - j)));
           Jval(pos_t(nmodel - 1 - j)) = nmodel-j;
+          if(!rjct(pos_t(nmodel - 1 - j))){
+            reject_rest = true;
+          }
         }
       }
       if(type=="none"){
@@ -362,6 +369,7 @@ Rcpp::List confint_search(arma::vec start,
         k = 2*(sqrt(M_2PI))/(k_tmp*exp((-k_tmp*k_tmp)/2));
         Jval.fill(1);
         for(arma::uword j = 0; j < nmodel; j++){
+          rjct(j) = qstat(j) > qtest(j);
           step(j) = k *(b(j) - bound(j));
         }
       }
