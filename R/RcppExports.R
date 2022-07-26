@@ -10,6 +10,7 @@
 #' @param xb A numeric vector of fitted linear predictors
 #' @param invS A matrix. If using the weighted statistic then it should be the inverse covariance matrix of the observations
 #' @param family2 A string naming the link function
+#' @param Z A matrix with columns indicating cluster membership
 #' @param weight Logical value indicating whether to use the weighted statistic (TRUE) or the unweighted statistic (FALSE)
 #' @return A scalar value with the value of the statistic
 qscore_impl <- function(resids, tr, xb, invS, family2, Z, weight = TRUE) {
@@ -25,6 +26,7 @@ qscore_impl <- function(resids, tr, xb, invS, family2, Z, weight = TRUE) {
 #' @param xb A numeric vector of fitted linear predictors
 #' @param invS A matrix. If using the weighted statistic then it should be the inverse covariance matrix of the observations
 #' @param family2 A string naming the link function
+#' @param Z A matrix with columns indicating cluster membership
 #' @param weight Logical value indicating whether to use the weighted statistic (TRUE) or the unweighted statistic (FALSE)
 #' @param verbose Logical indicating whether to report detailed output
 #' @return A numeric vector of quasi-score test statistics for each of the permutations

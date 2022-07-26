@@ -44,8 +44,9 @@ interval search during running of function. Default is TRUE}
 = Holm standard stepdown, "h" = Holm stepdown using randomisation test, "b" = standard Bonferroni, "br" =
 Bonerroni using randomisation test, or "none" = randomisation test with no correction.}
 
-\item{rand_func}{String of the name of a function that re-randomises the clusters. The function should
-produce a data frame that identifies the clusters in the treatment group under the new
+\item{rand_func}{String of the name of a function that re-randomises the clusters. The function
+must take the arguments \code{nJ} for the number of clusters and \code{nT} for the number of time periods.
+The function should produce a data frame that identifies the clusters in the treatment group under the new
 randomisation scheme. The data frame can either have a single column with name cl_var or
 two columns of cl_var and t identifying the cluster ID and time period a cluster joins
 the treatment group. If NULL then clusters are randomised in a 1:1 ratio to treatment and control}

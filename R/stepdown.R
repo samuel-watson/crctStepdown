@@ -195,13 +195,13 @@ stepdown <- function(fitlist,
       resids[[i]] <- out$y - ypred[[i]]
       family2list[[i]] <- out$family[[2]]
 
-      # if(!is.null(inv_sigma)){
-      #   invS <- inv_sigma[[i]]
-      #   w.opt <- TRUE
-      # } else {
-      #   invS <- 1
-      #   w.opt <- FALSE
-      # }
+      tmp <<- list(as.vector(resids[[i]]),
+                   as.vector(dtr),
+                   as.vector(xb[[i]]),
+                   as.matrix(inv_sigma[[i]]),
+                   as.character(family2list[[i]]),
+                   Z,
+                   w.opt)
       tr_st[i] <- qscore_impl(as.vector(resids[[i]]),
                               as.vector(dtr),
                               as.vector(xb[[i]]),

@@ -137,6 +137,7 @@ inline arma::vec get_G(const arma::vec &x,
 //' @param xb A numeric vector of fitted linear predictors
 //' @param invS A matrix. If using the weighted statistic then it should be the inverse covariance matrix of the observations
 //' @param family2 A string naming the link function
+//' @param Z A matrix with columns indicating cluster membership
 //' @param weight Logical value indicating whether to use the weighted statistic (TRUE) or the unweighted statistic (FALSE)
 //' @return A scalar value with the value of the statistic
 // [[Rcpp::export]]
@@ -152,9 +153,12 @@ double qscore_impl(const arma::vec &resids,
   if (weight){
     g = arma::trans(get_G(xb, family2));
     arma::rowvec gS = g * invS;
-    arma::mat Zt = Z.t();
-    Zt.each_row() % g;
-    q = Zt * (tr % resids);
+    arma::mat Z_ = Z;
+    for(arma::uword i=0; i < Z.n_cols; i++){
+      Z_.col(i) = Z.col(i) % arma::trans(gS);
+    }
+    //Zt.each_row() % g;
+    q = Z_.t() * (tr % resids);
     //q = arma::as_scalar((g * invS) * (tr % resids));
   } else {
     q = Z.t() * (tr % resids);//arma::as_scalar(arma::dot(tr, resids));
@@ -173,6 +177,7 @@ double qscore_impl(const arma::vec &resids,
 //' @param xb A numeric vector of fitted linear predictors
 //' @param invS A matrix. If using the weighted statistic then it should be the inverse covariance matrix of the observations
 //' @param family2 A string naming the link function
+//' @param Z A matrix with columns indicating cluster membership
 //' @param weight Logical value indicating whether to use the weighted statistic (TRUE) or the unweighted statistic (FALSE)
 //' @param verbose Logical indicating whether to report detailed output
 //' @return A numeric vector of quasi-score test statistics for each of the permutations

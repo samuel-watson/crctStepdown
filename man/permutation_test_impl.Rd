@@ -27,6 +27,8 @@ permutation_test_impl(
 
 \item{family2}{A string naming the link function}
 
+\item{Z}{A matrix with columns indicating cluster membership}
+
 \item{weight}{Logical value indicating whether to use the weighted statistic (TRUE) or the unweighted statistic (FALSE)}
 
 \item{verbose}{Logical indicating whether to report detailed output}
