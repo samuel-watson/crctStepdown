@@ -321,7 +321,6 @@ stepdown <- function(fitlist,
   if(confint){
     if(verbose)cat("Searching for confidence intervals...\n")
     trmat <- sapply(1:nsteps,function(i)new_rand())
-    trmat <<- trmat
     if(verbose)cat("Lower\n")
 
 
