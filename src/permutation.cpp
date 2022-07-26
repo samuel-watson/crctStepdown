@@ -61,32 +61,32 @@ Rcpp::List fast_glm_impl(Rcpp::NumericMatrix Xs,
   // maximize likelihood
   int iters = glm_solver->solve(maxit);
 
-  VectorXd beta      = glm_solver->get_beta();
-  VectorXd se        = glm_solver->get_se();
-  VectorXd mu        = glm_solver->get_mu();
+  //VectorXd beta      = glm_solver->get_beta();
+  //VectorXd se        = glm_solver->get_se();
+  //VectorXd mu        = glm_solver->get_mu();
   VectorXd eta       = glm_solver->get_eta();
-  VectorXd wts       = glm_solver->get_w();
-  VectorXd pweights  = glm_solver->get_weights();
+  //VectorXd wts       = glm_solver->get_w();
+  //VectorXd pweights  = glm_solver->get_weights();
 
-  double dev         = glm_solver->get_dev();
-  int rank           = glm_solver->get_rank();
-  bool converged     = glm_solver->get_converged();
+  //double dev         = glm_solver->get_dev();
+  //int rank           = glm_solver->get_rank();
+  //bool converged     = glm_solver->get_converged();
 
-  int df = X.rows() - rank;
+  // int df = X.rows() - rank;
 
   delete glm_solver;
-
-  return List::create(_["coefficients"]      = beta,
-                      _["se"]                = se,
-                      _["fitted.values"]     = mu,
-                      _["linear.predictors"] = eta,
-                      _["deviance"]          = dev,
-                      _["weights"]           = wts,
-                      _["prior.weights"]     = pweights,
-                      _["rank"]              = rank,
-                      _["df.residual"]       = df,
-                      _["iter"]              = iters,
-                      _["converged"]         = converged);
+  return List::create(_["linear.predictors"] = eta);
+  // return List::create(_["coefficients"]      = beta,
+  //                     _["se"]                = se,
+  //                     _["fitted.values"]     = mu,
+  //                     _["linear.predictors"] = eta,
+  //                     _["deviance"]          = dev,
+  //                     _["weights"]           = wts,
+  //                     _["prior.weights"]     = pweights,
+  //                     _["rank"]              = rank,
+  //                     _["df.residual"]       = df,
+  //                     _["iter"]              = iters,
+  //                     _["converged"]         = converged);
 }
 
 double gaussian_cdf(double x){
@@ -189,7 +189,7 @@ arma::vec permutation_test_impl(const arma::vec &resids,
   if (verbose) Rcpp::Rcout << "Starting permutations\n" << std::endl;
 
   arma::vec qtest = arma::zeros<arma::vec>(iter);
-//#pragma omp parallel for //uncomment for build
+#pragma omp parallel for //uncomment for build
   for (int i = 0; i < iter; ++i) {
     arma::vec tr = tr_mat.col(i);
     tr.replace(0, -1);
