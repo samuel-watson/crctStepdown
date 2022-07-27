@@ -148,15 +148,15 @@ double qscore_impl(const arma::vec &resids,
                    const std::string &family2,
                    const arma::mat &Z,
                    bool weight=true) {
-  arma::rowvec g;
+  arma::vec g;
   arma::vec q(Z.n_cols);
   if (weight){
-    g = arma::trans(get_G(xb, family2));
+    g = get_G(xb, family2);
 #pragma omp parallel for
     for(arma::uword j=0; j<Z.n_cols; j++){
       arma::uvec idx = arma::find(Z.col(j)==1);
-      arma::rowvec gS = g(idx) * invS(idx,idx);
-      q(j) = arma::dot((Z.col(j) % arma::trans(gS)),(tr(idx) % resids(idx)));
+      arma::vec gS =  invS(idx,idx) * g(idx);
+      q(j) = arma::dot(gS,(tr(idx) % resids(idx)));
     }
     // arma::rowvec gS = g * invS;
     // arma::mat Z_ = Z;
