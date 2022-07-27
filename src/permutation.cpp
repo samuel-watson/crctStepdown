@@ -152,7 +152,7 @@ double qscore_impl(const arma::vec &resids,
   arma::vec q(Z.n_cols);
   if (weight){
     g = get_G(xb, family2);
-#pragma omp parallel for
+//#pragma omp parallel for
     for(arma::uword j=0; j<Z.n_cols; j++){
       arma::uvec idx = arma::find(Z.col(j)==1);
       arma::vec gS =  invS(idx,idx) * g(idx);
@@ -200,7 +200,7 @@ arma::vec permutation_test_impl(const arma::vec &resids,
   if (verbose) Rcpp::Rcout << "Starting permutations\n" << std::endl;
 
   arma::vec qtest = arma::zeros<arma::vec>(iter);
-#pragma omp parallel for //uncomment for build
+//#pragma omp parallel for //uncomment for build
   for (int i = 0; i < iter; ++i) {
     arma::vec tr = tr_mat.col(i);
     tr.replace(0, -1);
