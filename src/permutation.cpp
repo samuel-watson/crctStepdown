@@ -1,12 +1,19 @@
 #define STRICT_R_HEADERS
 #include <string>
 
-#include <RcppArmadillo.h>
-#include <RcppEigen.h>
+#include "eigenext.h"
 #include "glm.h"
 
 #ifdef _OPENMP
 #include <omp.h>
+#else
+#define omp_get_num_threads()  1
+#define omp_get_thread_num()   0
+#define omp_get_max_threads()  1
+#define omp_get_thread_limit() 1
+#define omp_get_num_procs()    1
+#define omp_set_nested(a)   // empty statement to remove the call
+#define omp_get_wtime()        0
 #endif
 
 using namespace Rcpp;
@@ -14,8 +21,6 @@ using namespace Rcpp;
 using Eigen::VectorXd;
 using Eigen::MatrixXd;
 using Eigen::Map;
-
-typedef MatrixXd::Index Index;
 
 Rcpp::List fast_glm_impl(Rcpp::NumericMatrix Xs,
                    Rcpp::NumericVector ys,
@@ -56,47 +61,21 @@ Rcpp::List fast_glm_impl(Rcpp::NumericMatrix Xs,
 
   // initialize parameters
   glm_solver->init_parms(beta_init, mu_init, eta_init);
-
-
-  // maximize likelihood
   int iters = glm_solver->solve(maxit);
-
-  //VectorXd beta      = glm_solver->get_beta();
-  //VectorXd se        = glm_solver->get_se();
-  //VectorXd mu        = glm_solver->get_mu();
   VectorXd eta       = glm_solver->get_eta();
-  //VectorXd wts       = glm_solver->get_w();
-  //VectorXd pweights  = glm_solver->get_weights();
-
-  //double dev         = glm_solver->get_dev();
-  //int rank           = glm_solver->get_rank();
-  //bool converged     = glm_solver->get_converged();
-
-  // int df = X.rows() - rank;
 
   delete glm_solver;
   return List::create(_["linear.predictors"] = eta);
-  // return List::create(_["coefficients"]      = beta,
-  //                     _["se"]                = se,
-  //                     _["fitted.values"]     = mu,
-  //                     _["linear.predictors"] = eta,
-  //                     _["deviance"]          = dev,
-  //                     _["weights"]           = wts,
-  //                     _["prior.weights"]     = pweights,
-  //                     _["rank"]              = rank,
-  //                     _["df.residual"]       = df,
-  //                     _["iter"]              = iters,
-  //                     _["converged"]         = converged);
 }
 
 double gaussian_cdf(double x){
   return R::pnorm(x, 0, 1, true, false);
 }
 
-arma::vec gaussian_cdf_vec(const arma::vec& v){
-  arma::vec res = arma::zeros<arma::vec>(v.n_elem);
-  for (arma::uword i = 0; i < v.n_elem; ++i)
-    res[i] = gaussian_cdf(v[i]);
+vec gaussian_cdf_vec(const vec& v){
+  vec res(v.size());
+  for (int i = 0; i < v.size(); ++i)
+    res(i) = gaussian_cdf(v(i));
   return res;
 }
 
@@ -104,24 +83,29 @@ double gaussian_pdf(double x){
   return R::dnorm(x, 0, 1, false);
 }
 
-arma::vec gaussian_pdf_vec(const arma::vec& v){
-  arma::vec res = arma::zeros<arma::vec>(v.n_elem);
-  for (arma::uword i = 0; i < v.n_elem; ++i)
-    res[i] = gaussian_pdf(v[i]);
+vec gaussian_pdf_vec(const vec& v){
+  vec res(v.size());
+  for (int i = 0; i < v.size(); ++i)
+    res(i) = gaussian_pdf(v(i));
   return res;
 }
 
-inline arma::vec get_G(const arma::vec &x,
-                       const Rcpp::String &family2){
-  arma::vec dx;
+inline vec get_G(const vec &x,
+                 const Rcpp::String &family2){
+  vec dx(x.size());
   if(family2 == "identity"){
-    dx = arma::ones<arma::vec>(x.n_elem);
+    dx.setConstant(1);
   } else if(family2 == "log"){
-    dx = exp(x);
+    dx = x;
+    dx = dx.array().exp().matrix();
   } else if(family2 == "logit"){
-    dx = (exp(x)/(1+exp(x))) % (1-exp(x)/(1+exp(x)));
+    Eigen::ArrayXd expdx = x.array().exp();
+    Eigen::ArrayXd expdx2 = expdx * (1-expdx);
+    expdx = (1+expdx)*(1+expdx);
+    dx = (expdx2 * expdx.inverse()).matrix();
   } else if(family2 == "probit"){
-    dx = -1/gaussian_pdf_vec(x);
+    dx = (gaussian_pdf_vec(x)).array().inverse().matrix();
+    dx *= -1;
   }
   return dx;
 }
@@ -141,36 +125,38 @@ inline arma::vec get_G(const arma::vec &x,
 //' @param weight Logical value indicating whether to use the weighted statistic (TRUE) or the unweighted statistic (FALSE)
 //' @return A scalar value with the value of the statistic
 // [[Rcpp::export]]
-double qscore_impl(const arma::vec &resids,
-                   arma::vec tr,
-                   const arma::vec &xb,
-                   const arma::mat &invS,
+double qscore_impl(const Eigen::VectorXd &resids,
+                   Eigen::VectorXd tr,
+                   const Eigen::VectorXd &xb,
+                   const Eigen::MatrixXd &invS,
                    const std::string &family2,
-                   const arma::mat &Z,
+                   const Eigen::ArrayXXd &Z,
                    bool weight=true) {
-  arma::vec g;
-  arma::vec q(Z.n_cols);
+  vec g(xb.size());
+  vec q(Z.cols());
   if (weight){
     g = get_G(xb, family2);
-//#pragma omp parallel for
-    for(arma::uword j=0; j<Z.n_cols; j++){
-      arma::uvec idx = arma::find(Z.col(j)==1);
-      arma::vec gS =  invS(idx,idx) * g(idx);
-      q(j) = arma::dot(gS,(tr(idx) % resids(idx)));
+#pragma omp parallel for
+    for(int j=0; j<Z.cols(); j++){
+      Eigen::ArrayXd zcol = Z.col(j);
+      Eigen::ArrayXi idx = Eigen_ext::find<double>(zcol,1);
+      mat invScl = Eigen_ext::mat_indexing(invS,idx,idx);
+      vec gcl(idx.size());
+      for(int k = 0; k<idx.size(); k++){
+        gcl(k) = g(idx(k));
+      }
+      vec gS = invScl * gcl;
+      for(int k = 0; k<idx.size(); k++){
+        gcl(k) = tr(idx(k))*resids(idx(k));
+      }
+      q(j) = gS.transpose()*gcl;
     }
-    // arma::rowvec gS = g * invS;
-    // arma::mat Z_ = Z;
-    // for(arma::uword i=0; i < Z.n_cols; i++){
-    //   Z_.col(i) = Z.col(i) % arma::trans(gS);
-    // }
-    // //Zt.each_row() % g;
-    // q = Z_.t() * (tr % resids);
-    //q = arma::as_scalar((g * invS) * (tr % resids));
   } else {
-    q = Z.t() * (tr % resids);//arma::as_scalar(arma::dot(tr, resids));
+    vec tres = (tr.array()*resids.array()).matrix();
+    q = Z.matrix().transpose() * tres;
   }
-  double denom = arma::as_scalar(arma::dot(q.t(), q));
-  double numer = arma::sum(q);
+  double denom = q.transpose()*q; //arma::as_scalar(arma::dot(q.t(), q));
+  double numer = q.sum();//arma::sum(q);
   return std::abs(numer/pow(denom,0.5));
 }
 
@@ -188,23 +174,24 @@ double qscore_impl(const arma::vec &resids,
 //' @param verbose Logical indicating whether to report detailed output
 //' @return A numeric vector of quasi-score test statistics for each of the permutations
 // [[Rcpp::export]]
-arma::vec permutation_test_impl(const arma::vec &resids,
-                                const arma::mat &tr_mat,
-                                const arma::vec &xb,
-                                const arma::mat &invS,
+Eigen::VectorXd permutation_test_impl(const Eigen::VectorXd &resids,
+                                const Eigen::MatrixXd &tr_mat,
+                                const Eigen::VectorXd &xb,
+                                const Eigen::MatrixXd &invS,
                                 const std::string &family2,
-                                const arma::mat &Z,
+                                const Eigen::ArrayXXd &Z,
                                 bool weight,
                                 int iter = 1000,
                                 bool verbose = true) {
   if (verbose) Rcpp::Rcout << "Starting permutations\n" << std::endl;
 
-  arma::vec qtest = arma::zeros<arma::vec>(iter);
-//#pragma omp parallel for //uncomment for build
+  vec qtest(iter);
+  qtest.setZero();
+#pragma omp parallel for
   for (int i = 0; i < iter; ++i) {
-    arma::vec tr = tr_mat.col(i);
-    tr.replace(0, -1);
-    qtest[i] = qscore_impl(resids, tr, xb, invS, family2, Z, weight);
+    vec tr = tr_mat.col(i);
+    Eigen_ext::replaceVec(tr,0,-1);
+    qtest(i) = qscore_impl(resids, tr, xb, invS, family2, Z, weight);
   }
   return qtest;
 }
@@ -229,47 +216,51 @@ arma::vec permutation_test_impl(const arma::vec &resids,
 //' @param verbose Logical indicating whether to provide detailed output.
 //' @return The estimated confidence interval bound
 // [[Rcpp::export]]
-Rcpp::List confint_search(arma::vec start,
-                      arma::vec b,
+Rcpp::List confint_search(Eigen::VectorXd start,
+                      Eigen::VectorXd b,
                       int n,
-                      arma::uword nmodel,
+                      int nmodel,
                       const Rcpp::List &Xnull_,
                       const Rcpp::List &y,
                       const Rcpp::NumericVector &tr_,
-                      const arma::mat &new_tr_mat,
+                      const Eigen::MatrixXd &new_tr_mat,
                       const Rcpp::List &invS,
                       Rcpp::List family,
                       Rcpp::List family2,
-                      const arma::mat &Z,
+                      const Eigen::ArrayXXd &Z,
                       const Rcpp::String &type,
                       int nsteps = 1000,
                       bool weight = true,
                       double alpha = 0.05,
                       bool verbose = true) {
 
-  // arma::mat Xull = Rcpp::as<arma::mat>(Xnull_);
-  // arma::vec y = Rcpp::as<arma::vec>(y_);
-  arma::vec tr = as<arma::vec>(tr_);
-  tr.replace(0,-1);
-  // arma::vec xb(n,arma::fill::zeros);
+  vec tr = as<vec>(tr_);
+  Eigen_ext::replaceVec(tr,0,-1);
+  // for(int j = 0; j < tr.size(); j++){
+  //   if(tr(j)==0){
+  //     tr(j) = -1;
+  //   }
+  // }
+
   Rcpp::NumericVector weights_(n);
   weights_.fill(1);
 
-  arma::vec bound = start;
-  arma::mat boundvals(nsteps,nmodel);
-  arma::vec qstat(nmodel,arma::fill::zeros);
-  arma::vec qtest(nmodel);
-  arma::vec step(nmodel);
+  vec bound = start;
+  mat boundvals(nsteps,nmodel);
+  vec qstat(nmodel);
+  qstat.setZero();
+  vec qtest(nmodel);
+  vec step(nmodel);
 
+  for (int i = 1; i <= nsteps; ++i) {
+    boundvals.row(i-1) = bound.transpose();
+    vec new_tr = new_tr_mat.col(i-1);
+    Eigen_ext::replaceVec(new_tr,0,-1);
+    for(int j = 0; j < nmodel; j++){
+      vec tr2 = as<vec>(tr_);
+      Eigen_ext::replaceVec(tr2,1,bound(j));
 
-
-  for (arma::uword i = 1; i <= nsteps; ++i) {
-    boundvals.row(i-1) = bound.t();
-    arma::vec new_tr = new_tr_mat.col(i-1);
-    new_tr.replace(0, -1);
-    for(arma::uword j = 0; j < nmodel; j++){
-      arma::vec tr2 = as<arma::vec>(tr_);
-      tr2.replace(1,bound(j));
+      //tr2.replace(1,bound(j));
       Rcpp::List faml = family[j];
       Rcpp::NumericMatrix Xs = Rcpp::as<Rcpp::NumericMatrix>(Xnull_[j]);
       Rcpp::NumericVector ys = Rcpp::as<Rcpp::NumericVector>(y[j]);
@@ -311,37 +302,34 @@ Rcpp::List confint_search(arma::vec start,
                                         100);
       const Map<VectorXd>  xb(as<Map<VectorXd> >(result["linear.predictors"]));
       Rcpp::NumericVector xbvec(wrap(xb));
-      // const Map<VectorXd>  coefs(as<Map<VectorXd> >(result["coefficients"]));
-      // Rcpp::NumericVector coefvec(wrap(coefs));
-      // if(j==0)Rcpp::Rcout << "\n Xs: " << Xs;
-      // if(j==0)Rcpp::Rcout << "\n cef: " << coefvec;
-      // if(j==0)Rcpp::Rcout << "\n x: " << xbvec;
-      arma::vec ypred = Rcpp::as<arma::vec>(linkinv(xb));
-      arma::vec resids = as<arma::vec>(y[j]) - ypred;
-      qstat(j) = qscore_impl(resids, tr, as<arma::vec>(xbvec), as<arma::mat>(invS[j]), as<std::string>(family2[j]), Z, weight);
-      qtest(j) = qscore_impl(resids, new_tr, as<arma::vec>(xbvec), as<arma::mat>(invS[j]), as<std::string>(family2[j]), Z, weight);
+      vec ypred = Rcpp::as<vec>(linkinv(xb));
+      vec resids = as<vec>(y[j]) - ypred;
+      qstat(j) = qscore_impl(resids, tr, xb, as<mat>(invS[j]), as<std::string>(family2[j]), Z, weight);
+      qtest(j) = qscore_impl(resids, new_tr, xb, as<mat>(invS[j]), as<std::string>(family2[j]), Z, weight);
     }
     // Rcpp::Rcout << "\n qstat: " << qstat.t();
     // Rcpp::Rcout << "\n qtest: " << qtest.t();
     //Rcpp::Rcout << "\nDone fits and stats" << qstat.t() << "and " << qtest.t();
-    arma::uvec pos_t = arma::sort_index(qstat);
-
-    arma::uvec rjct(nmodel);
+    //arma::uvec pos_t = arma::sort_index(qstat);
+    Eigen::ArrayXi pos_t = Eigen_ext::sort_indexes(qstat.array());
+    Eigen::ArrayXi rjct(nmodel);
     double k;
     double k_tmp;
-    arma::vec Jval(nmodel);
-    arma::vec step(nmodel);
+    double stat_test;
+    vec Jval(nmodel);
+    vec step(nmodel);
 
     if(type=="rw"){
       k_tmp = gaussian_cdf(1-alpha);
       k = 2*(sqrt(M_2PI))/(k_tmp*exp((-k_tmp*k_tmp)/2));
-      Jval.fill(1);
+      Jval.setConstant(1);
       bool reject_rest = false;
-      for(arma::uword j = 0; j < nmodel; j++){
+      for(int j = 0; j < nmodel; j++){
         if(!reject_rest){
-          rjct(pos_t(nmodel - 1 - j)) = qstat(pos_t(nmodel-1-j)) >= arma::max(qtest(pos_t.subvec(0,(nmodel - 1 - j))));
+          stat_test = Eigen_ext::max_val_subvec(qtest,pos_t.head(nmodel-j));
+          rjct(pos_t(nmodel - 1 - j)) = qstat(pos_t(nmodel-1-j)) >= stat_test;
         } else {
-          rjct(pos_t(nmodel - 1 - j)) = false;
+          rjct(pos_t(nmodel - 1 - j)) = 0;
         }
         step(pos_t(nmodel - 1 - j)) = k *(b(pos_t(nmodel - 1 - j)) - bound(pos_t(nmodel - 1 - j)));
         if(!rjct(pos_t(nmodel - 1 - j))){
@@ -352,19 +340,19 @@ Rcpp::List confint_search(arma::vec start,
       if(type == "b" || type == "br"){
         k_tmp = gaussian_cdf(1-alpha/nmodel);
         k = 2*(sqrt(M_2PI))/(k_tmp*exp((-k_tmp*k_tmp)/2));
-        Jval.fill(nmodel);
-        for(arma::uword j = 0; j < nmodel; j++){
+        Jval.setConstant(nmodel);
+        for(int j = 0; j < nmodel; j++){
           rjct(j) = qstat(j) > qtest(j);
           step(j) = k *(b(j) - bound(j));
         }
       }
       if(type == "h"|| type=="hr"){
         bool reject_rest = false;
-        for(arma::uword j = 0; j < nmodel; j++){
+        for(int j = 0; j < nmodel; j++){
           if(!reject_rest){
             rjct(pos_t(nmodel - 1 - j)) = qstat(pos_t(nmodel-1-j)) >= qtest(pos_t(nmodel - 1 - j));
           } else {
-            rjct(pos_t(nmodel - 1 - j)) = false;
+            rjct(pos_t(nmodel - 1 - j)) = 0;
           }
           k_tmp = gaussian_cdf(1-alpha/(nmodel-j));
           k = 2*(sqrt(M_2PI))/(k_tmp*exp((-k_tmp*k_tmp)/2));
@@ -378,15 +366,15 @@ Rcpp::List confint_search(arma::vec start,
       if(type=="none"){
         k_tmp = gaussian_cdf(1-alpha);
         k = 2*(sqrt(M_2PI))/(k_tmp*exp((-k_tmp*k_tmp)/2));
-        Jval.fill(1);
-        for(arma::uword j = 0; j < nmodel; j++){
+        Jval.setConstant(1);
+        for(int j = 0; j < nmodel; j++){
           rjct(j) = qstat(j) > qtest(j);
           step(j) = k *(b(j) - bound(j));
         }
       }
     }
 
-    for(arma::uword j = 0; j < nmodel; j++){
+    for(int j = 0; j < nmodel; j++){
       if(rjct(j)){
         bound(j) += step(j)*(alpha/Jval(j))/i;
       } else {
@@ -395,7 +383,7 @@ Rcpp::List confint_search(arma::vec start,
     }
 
     if(verbose){
-      Rcpp::Rcout << "\rStep = " << i << " bound: " << bound.t() << std::endl;
+      Rcpp::Rcout << "\rStep = " << i << " bound: " << bound.transpose() << std::endl;
     }
   }
   return List::create(_["bound"] = bound,
