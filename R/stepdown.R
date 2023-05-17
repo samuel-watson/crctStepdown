@@ -330,14 +330,14 @@ stepdown <- function(fitlist,
 
     if(!is.null(ci_start_values)){
       if(c("lower")%in%tolower(names(ci_start_values))){
-        ci_lower_start <- ci_start_values[which(tolower(names(ci_start_values))=="lower")]
+        ci_lower_start <- ci_start_values[[which(tolower(names(ci_start_values))=="lower")]]
         if(length(ci_lower_start)!=length(tr_eff))stop("Wrong length start values for lower interval bound")
       } else if(c("scale")%in%tolower(names(ci_start_values))) {
-        se_scale <- ci_start_values[which(tolower(names(ci_start_values))=="scale")]
+        se_scale <- ci_start_values[[which(tolower(names(ci_start_values))=="scale")]]
         ci_lower_start <- tr_eff-se_scale*tr_sd
-      } else {
-        ci_lower_start <- tr_eff-3*tr_sd
       }
+    } else {
+      ci_lower_start <- tr_eff-3*tr_sd
     }
 
     ci_lower <- confint_search(start = ci_lower_start,
@@ -364,13 +364,13 @@ stepdown <- function(fitlist,
 
     if(!is.null(ci_start_values)){
       if(c("upper")%in%tolower(names(ci_start_values))){
-        ci_upper_start <- ci_start_values[which(tolower(names(ci_start_values))=="upper")]
+        ci_upper_start <- ci_start_values[[which(tolower(names(ci_start_values))=="upper")]]
         if(length(ci_upper_start)!=length(tr_eff))stop("Wrong length start values for upper interval bound")
       } else if(c("scale")%in%tolower(names(ci_start_values))) {
         ci_upper_start <- tr_eff+se_scale*tr_sd
-      } else {
-        ci_upper_start <- tr_eff+3*tr_sd
       }
+    } else {
+      ci_upper_start <- tr_eff+3*tr_sd
     }
 
     ci_upper <- confint_search(start = ci_upper_start,

@@ -136,7 +136,7 @@ double qscore_impl(const Eigen::VectorXd &resids,
   vec q(Z.cols());
   if (weight){
     g = get_G(xb, family2);
-#pragma omp parallel for
+//#pragma omp parallel for
     for(int j=0; j<Z.cols(); j++){
       Eigen::ArrayXd zcol = Z.col(j);
       Eigen::ArrayXi idx = Eigen_ext::find<double>(zcol,1);
@@ -155,8 +155,8 @@ double qscore_impl(const Eigen::VectorXd &resids,
     vec tres = (tr.array()*resids.array()).matrix();
     q = Z.matrix().transpose() * tres;
   }
-  double denom = q.transpose()*q; //arma::as_scalar(arma::dot(q.t(), q));
-  double numer = q.sum();//arma::sum(q);
+  double denom = q.transpose()*q;
+  double numer = q.sum();
   return std::abs(numer/pow(denom,0.5));
 }
 
@@ -236,11 +236,6 @@ Rcpp::List confint_search(Eigen::VectorXd start,
 
   vec tr = as<vec>(tr_);
   Eigen_ext::replaceVec(tr,0,-1);
-  // for(int j = 0; j < tr.size(); j++){
-  //   if(tr(j)==0){
-  //     tr(j) = -1;
-  //   }
-  // }
 
   Rcpp::NumericVector weights_(n);
   weights_.fill(1);
@@ -382,7 +377,7 @@ Rcpp::List confint_search(Eigen::VectorXd start,
       }
     }
 
-    if(verbose){
+    if(verbose && (i % 50 == 0 | i == 1)){
       Rcpp::Rcout << "\rStep = " << i << " bound: " << bound.transpose() << std::endl;
     }
   }
