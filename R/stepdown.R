@@ -48,6 +48,10 @@ perm_dist <- function(out,
 #' @param confint Logical indicating whether to run the confidence interval search process
 #' @param sigma optional, list of estimated covariance matrices of the observations from the models in fitlist.
 #' If provided then the weighted q-score statistic is used.
+#' @param ci_start_values Optional list. The list should contain named vectors "upper" and/or "lower" that provide
+#' a set of starting values for the upper and/or lower confidence interval searches, respectively. Alternatively,
+#' a named scalar `scale` can be provided such that the starting values of the confidence interval search procedure
+#' are est +/- `scale`*SE.
 #' @param verbose Logical indicating whether to provide detailed output
 #' @return A data frame with the point estimates, p-values, and confidence intervals
 #' @importFrom methods is
@@ -80,6 +84,7 @@ stepdown <- function(fitlist,
                      rand_func=NULL,
                      confint=TRUE,
                      sigma = NULL,
+                     ci_start_values = NULL,
                      verbose=TRUE){
 
   if(!is(data,"data.frame"))stop("Data should be a data frame")
@@ -214,7 +219,7 @@ stepdown <- function(fitlist,
                                                     verbose))
     }
 
-    out <- Reduce(rbind,qtest)
+    out <- matrix(Reduce(rbind,qtest), nrow=length(fitlist))
 
 
     out <- abs(out)
@@ -323,8 +328,19 @@ stepdown <- function(fitlist,
     trmat <- sapply(1:nsteps,function(i)new_rand())
     if(verbose)cat("Lower\n")
 
+    if(!is.null(ci_start_values)){
+      if(c("lower")%in%tolower(names(ci_start_values))){
+        ci_lower_start <- ci_start_values[which(tolower(names(ci_start_values))=="lower")]
+        if(length(ci_lower_start)!=length(tr_eff))stop("Wrong length start values for lower interval bound")
+      } else if(c("scale")%in%tolower(names(ci_start_values))) {
+        se_scale <- ci_start_values[which(tolower(names(ci_start_values))=="scale")]
+        ci_lower_start <- tr_eff-se_scale*tr_sd
+      } else {
+        ci_lower_start <- tr_eff-3*tr_sd
+      }
+    }
 
-    ci_lower <- confint_search(start = tr_eff-3*tr_sd,
+    ci_lower <- confint_search(start = ci_lower_start,
                             b =  tr_eff,
                             n = nrow(data),
                             nmodel = length(fitlist),
@@ -345,7 +361,19 @@ stepdown <- function(fitlist,
 
     #out <<- ci_lower
     if(verbose)cat("\nUpper\n")
-    ci_upper <- confint_search(start = tr_eff+3*tr_sd,
+
+    if(!is.null(ci_start_values)){
+      if(c("upper")%in%tolower(names(ci_start_values))){
+        ci_upper_start <- ci_start_values[which(tolower(names(ci_start_values))=="upper")]
+        if(length(ci_upper_start)!=length(tr_eff))stop("Wrong length start values for upper interval bound")
+      } else if(c("scale")%in%tolower(names(ci_start_values))) {
+        ci_upper_start <- tr_eff+se_scale*tr_sd
+      } else {
+        ci_upper_start <- tr_eff+3*tr_sd
+      }
+    }
+
+    ci_upper <- confint_search(start = ci_upper_start,
                             b =  tr_eff,
                             n = nrow(data),
                             nmodel = length(fitlist),
@@ -374,8 +402,8 @@ stepdown <- function(fitlist,
       print(ggplot2::ggplot(data=rbind(dfu,dfl),ggplot2::aes(x=iter,y=value))+
               ggplot2::geom_line()+
               ggplot2::facet_grid(interval~variable))+
-        ggplot2::theme_bw()+
-        ggplot2::theme(panel.grid = ggplot2::element_blank())
+              ggplot2::theme_bw()+
+              ggplot2::theme(panel.grid = ggplot2::element_blank())
     }
 
   } else {
