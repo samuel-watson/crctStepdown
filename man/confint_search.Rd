@@ -29,7 +29,13 @@ confint_search(
 
 \item{b}{Numeric value indicating the parameter estimate}
 
+\item{n}{Integer indicating the sample size}
+
+\item{nmodel}{Integer. The number of models}
+
 \item{Xnull_}{Numeric matrix. The covariate design matrix with the treatment variable removed}
+
+\item{y}{Numeric vector of response variables}
 
 \item{tr_}{Numeric vector. The original random allocation (0s and 1s)}
 
@@ -41,6 +47,10 @@ confint_search(
 
 \item{family2}{A string naming the link function}
 
+\item{Z}{Matrix. Random effects design matrix describing cluster membership}
+
+\item{type}{String. Either "rw" for Romano-Wolf, "b" or "br" for bonferroni, "h" or "hr" for Holm, or "none"}
+
 \item{nsteps}{Integer specifying the number of steps of the search procedure}
 
 \item{weight}{Logical indicating whether to use the weighted (TRUE) or unweighted (FALSE) test statistic}
@@ -48,10 +58,6 @@ confint_search(
 \item{alpha}{The function generates (1-alpha)*100\% confidence intervals. Default is 0.05.}
 
 \item{verbose}{Logical indicating whether to provide detailed output.}
-
-\item{y_}{Numeric vector of response variables}
-
-\item{xb}{A numeric vector of fitted linear predictors}
 }
 \value{
 The estimated confidence interval bound

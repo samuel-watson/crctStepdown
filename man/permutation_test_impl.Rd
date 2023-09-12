@@ -31,6 +31,8 @@ permutation_test_impl(
 
 \item{weight}{Logical value indicating whether to use the weighted statistic (TRUE) or the unweighted statistic (FALSE)}
 
+\item{iter}{Integer. Number of permutation test iterations.}
+
 \item{verbose}{Logical indicating whether to report detailed output}
 }
 \value{

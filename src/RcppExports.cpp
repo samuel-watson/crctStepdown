@@ -11,6 +11,17 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// setParallel
+void setParallel(SEXP parallel_, int cores_);
+RcppExport SEXP _crctStepdown_setParallel(SEXP parallel_SEXP, SEXP cores_SEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type parallel_(parallel_SEXP);
+    Rcpp::traits::input_parameter< int >::type cores_(cores_SEXP);
+    setParallel(parallel_, cores_);
+    return R_NilValue;
+END_RCPP
+}
 // qscore_impl
 double qscore_impl(const Eigen::VectorXd& resids, Eigen::VectorXd tr, const Eigen::VectorXd& xb, const Eigen::MatrixXd& invS, const std::string& family2, const Eigen::ArrayXXd& Z, bool weight);
 RcppExport SEXP _crctStepdown_qscore_impl(SEXP residsSEXP, SEXP trSEXP, SEXP xbSEXP, SEXP invSSEXP, SEXP family2SEXP, SEXP ZSEXP, SEXP weightSEXP) {
@@ -76,6 +87,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_crctStepdown_setParallel", (DL_FUNC) &_crctStepdown_setParallel, 2},
     {"_crctStepdown_qscore_impl", (DL_FUNC) &_crctStepdown_qscore_impl, 7},
     {"_crctStepdown_permutation_test_impl", (DL_FUNC) &_crctStepdown_permutation_test_impl, 9},
     {"_crctStepdown_confint_search", (DL_FUNC) &_crctStepdown_confint_search, 17},

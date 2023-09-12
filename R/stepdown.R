@@ -20,12 +20,12 @@ perm_dist <- function(out,
 
 #' Conduct the randomisation-based stepdown procedure
 #'
-#' For a set of models fit with lme4, the function will conduct the randomisation tests
+#' For a set of models fit with lme4, base R, or glmmrBase, the function will conduct the randomisation tests
 #' and generate p-values for the null hypotheses of no treatment effect that controls the
 #'  family-wise error rate, and generates a 100(1-alpha)% confidence set for the
 #'  treatment effect model parameters.
 #'
-#' @param fitlist A list of models fitted with lme4. All models should be fit using the
+#' @param fitlist A list of models fitted with lme4, base R (lm or glm), or glmmrBase. All models should be fit using the
 #' same data frame.
 #' @param tr_var String indicating the name of the column in data that is a binary indicator
 #' for whether the observation was under the treatment (1=treatment, 0=control)
@@ -56,6 +56,9 @@ perm_dist <- function(out,
 #' @return A data frame with the point estimates, p-values, and confidence intervals
 #' @importFrom methods is
 #' @examples
+#' \dontshow{
+#' setParallel(FALSE) # for the CRAN check
+#' }
 #' out <- twoarm_sim()
 #' data <- out[[1]]
 #'   fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,
@@ -90,7 +93,7 @@ stepdown <- function(fitlist,
   if(!is(data,"data.frame"))stop("Data should be a data frame")
   if(!tr_var%in%colnames(data))stop("tr_var not in colnames(data)")
   if(!cl_var%in%colnames(data))stop("cl_var not in colnames(data)")
-  if(!all(unlist(lapply(fitlist,function(x)I(is(x,"glmerMod")|is(x,"lmerMod")|is(x,"glm")|is(x,"lm"))))))stop("All elements of fitlist should be glm, lm, glmer, or lmer model objects")
+  if(!all(unlist(lapply(fitlist,function(x)I(is(x,"glmerMod")|is(x,"lmerMod")|is(x,"glm")|is(x,"lm")|is(x,"mcml"))))))stop("All elements of fitlist should be glm, lm, glmer (lme4), lmer (lme4), or mcml (glmmrBase) model objects")
   if(alpha<=0|alpha>=1)stop("alpha should be between 0 and 1")
   if(!type%in%c("rw","b","h","br","hr","none"))stop("type should be one of rw, b, br, h, hr, or none.")
 
@@ -100,16 +103,22 @@ stepdown <- function(fitlist,
   tr_sd <- rep(NA,length(fitlist))
   tr_p <- rep(NA,length(fitlist))
   for(i in 1:length(fitlist)){
-    res <- summary(fitlist[[i]])
-    tr_eff[i] <- res$coefficients[tr_var,'Estimate']
-    tr_sd[i] <- res$coefficients[tr_var,'Std. Error']
-    if(ncol(res$coefficients)<4){
-      tr_p[i] <- res$coefficients[tr_var,3]
-      tr_p[i] <- 2*(1-pnorm(abs(tr_p[i])))
+    if(!is(fitlist[[i]],"mcml")){
+      res <- summary(fitlist[[i]])
+      tr_eff[i] <- res$coefficients[tr_var,'Estimate']
+      tr_sd[i] <- res$coefficients[tr_var,'Std. Error']
+      if(ncol(res$coefficients)<4){
+        tr_p[i] <- res$coefficients[tr_var,3]
+        tr_p[i] <- 2*(1-stats::pnorm(abs(tr_p[i])))
+      } else {
+        tr_p[i] <- res$coefficients[tr_var,4]
+      }
     } else {
-      tr_p[i] <- res$coefficients[tr_var,4]
+      res <- fitlist[[i]]
+      tr_eff[i] <- res$coefficients[res$coefficients$par == paste0("b_",tr_var),'est']
+      tr_sd[i] <- res$coefficients[res$coefficients$par == paste0("b_",tr_var),'SE']
+      tr_p[i] <- res$coefficients[res$coefficients$par == paste0("b_",tr_var),'p']
     }
-
   }
 
   tr_st <- rep(NA,length(fitlist))
@@ -399,6 +408,7 @@ stepdown <- function(fitlist,
       dfl$iter <- dfu$iter <- 1:nsteps
       dfl$interval <- "lower"
       dfu$interval <- "upper"
+      iter <- value <- NULL
       print(ggplot2::ggplot(data=rbind(dfu,dfl),ggplot2::aes(x=iter,y=value))+
               ggplot2::geom_line()+
               ggplot2::facet_grid(interval~variable))+

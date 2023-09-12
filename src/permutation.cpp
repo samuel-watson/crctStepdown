@@ -3,18 +3,7 @@
 
 #include "eigenext.h"
 #include "glm.h"
-
-#ifdef _OPENMP
-#include <omp.h>
-#else
-#define omp_get_num_threads()  1
-#define omp_get_thread_num()   0
-#define omp_get_max_threads()  1
-#define omp_get_thread_limit() 1
-#define omp_get_num_procs()    1
-#define omp_set_nested(a)   // empty statement to remove the call
-#define omp_get_wtime()        0
-#endif
+#include "openmpheader.h"
 
 using namespace Rcpp;
 
@@ -171,6 +160,7 @@ double qscore_impl(const Eigen::VectorXd &resids,
 //' @param family2 A string naming the link function
 //' @param Z A matrix with columns indicating cluster membership
 //' @param weight Logical value indicating whether to use the weighted statistic (TRUE) or the unweighted statistic (FALSE)
+//' @param iter Integer. Number of permutation test iterations.
 //' @param verbose Logical indicating whether to report detailed output
 //' @return A numeric vector of quasi-score test statistics for each of the permutations
 // [[Rcpp::export]]
@@ -202,14 +192,17 @@ Eigen::VectorXd permutation_test_impl(const Eigen::VectorXd &resids,
 //'
 //' @param start Numeric value indicating the starting value for the search procedure
 //' @param b Numeric value indicating the parameter estimate
+//' @param n Integer indicating the sample size
+//' @param nmodel Integer. The number of models
 //' @param Xnull_ Numeric matrix. The covariate design matrix with the treatment variable removed
-//' @param y_ Numeric vector of response variables
+//' @param y Numeric vector of response variables
 //' @param tr_ Numeric vector. The original random allocation (0s and 1s)
 //' @param new_tr_mat A matrix. Each column is a new random treatment allocation with 1s (treatment group) and 0s (control group)
-//' @param xb A numeric vector of fitted linear predictors
 //' @param invS A matrix. If using the weighted statistic then it should be the inverse covariance matrix of the observations
 //' @param family A \link{stats}[family] object
 //' @param family2 A string naming the link function
+//' @param Z Matrix. Random effects design matrix describing cluster membership
+//' @param type String. Either "rw" for Romano-Wolf, "b" or "br" for bonferroni, "h" or "hr" for Holm, or "none"
 //' @param nsteps Integer specifying the number of steps of the search procedure
 //' @param weight Logical indicating whether to use the weighted (TRUE) or unweighted (FALSE) test statistic
 //' @param alpha The function generates (1-alpha)*100% confidence intervals. Default is 0.05.
@@ -377,7 +370,7 @@ Rcpp::List confint_search(Eigen::VectorXd start,
       }
     }
 
-    if(verbose && (i % 50 == 0 | i == 1)){
+    if(verbose && (i % 50 == 0 || i == 1)){
       Rcpp::Rcout << "\rStep = " << i << " bound: " << bound.transpose() << std::endl;
     }
   }
