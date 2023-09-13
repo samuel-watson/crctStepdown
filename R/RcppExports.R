@@ -10,8 +10,8 @@
 #' @param parallel_ Logical indicating whether to use parallel computation (TRUE) or disable it (FALSE)
 #' @param cores_ Number of cores for parallel execution
 #' @return None, called for effects
-setParallel <- function(parallel_, cores_ = 2L) {
-    invisible(.Call(`_crctStepdown_setParallel`, parallel_, cores_))
+setParallelCRT <- function(parallel_, cores_ = 2L) {
+    invisible(.Call(`_crctStepdown_setParallelCRT`, parallel_, cores_))
 }
 
 #' The quasi-score statistic for a generalised linear mixed model

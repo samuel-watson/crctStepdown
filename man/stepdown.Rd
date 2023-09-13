@@ -75,7 +75,7 @@ treatment effect model parameters.
 }
 \examples{
 \dontshow{
-setParallel(FALSE) # for the CRAN check
+setParallelCRT(FALSE) # for the CRAN check
 }
 out <- twoarm_sim()
 data <- out[[1]]

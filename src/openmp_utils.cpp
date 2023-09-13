@@ -14,7 +14,7 @@ using namespace Rcpp;
 //' @param cores_ Number of cores for parallel execution
 //' @return None, called for effects
 // [[Rcpp::export]]
-void setParallel(SEXP parallel_, int cores_ = 2){
+void setParallelCRT(SEXP parallel_, int cores_ = 2){
   bool parallel = as<bool>(parallel_);
   if(OMP_IS_USED){
     int a, b; // needed for defines on machines without openmp

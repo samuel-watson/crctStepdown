@@ -57,7 +57,7 @@ perm_dist <- function(out,
 #' @importFrom methods is
 #' @examples
 #' \dontshow{
-#' setParallel(FALSE) # for the CRAN check
+#' setParallelCRT(FALSE) # for the CRAN check
 #' }
 #' out <- twoarm_sim()
 #' data <- out[[1]]
