@@ -180,7 +180,6 @@ stepdown <- function(fitlist,
   dtr[dtr==0] <- -1
 
   if(type%in%c("rw","br","hr","none")){
-    nullfitlist <- list()
     Xnull <- list()
     familylist <- list()
     xb <- list()
@@ -196,7 +195,6 @@ stepdown <- function(fitlist,
                             tr_var = tr_var,
                             null_par = 0)
 
-      nullfitlist[[i]] <- out$fit
       Xnull[[i]] <- out$X
       familylist[[i]] <- out$family
       if(out$family[[1]] == "gaussian"){

@@ -377,3 +377,4 @@ Rcpp::List confint_search(Eigen::VectorXd start,
   return List::create(_["bound"] = bound,
                       _["values"] = boundvals);
 }
+

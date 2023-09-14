@@ -102,7 +102,8 @@ est_null_model <- function(fit,
   } else {
     #data[,outv] <- data[,outv]-off1
     Y <- Y - off1
-    f1 <- RcppArmadillo::fastLm(X=X,y=Y)
+    f1 <- simpleLM(y_=Y,X_=X)
+    f1$fitted.values <- drop(f1$fitted.values)
   }
 
   f1$outv <- outv

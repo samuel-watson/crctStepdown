@@ -1,12 +1,12 @@
 test_that("whole package", {
   #generate sim data
+  setParallelCRT(FALSE) # needed for cran check
   data <- twoarm_sim()
   delta <- data[[2]]
   data <- data[[1]]
 
-  fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,
-                data=data,
-                family="poisson")
+  fit1 <- lme4::lmer(y1 ~ treat + (1|cl) ,
+                data=data)
 
   fit2 <- lme4::glmer(y2 ~ treat + (1|cl),
                 data=data,

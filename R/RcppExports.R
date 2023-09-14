@@ -74,3 +74,15 @@ confint_search <- function(start, b, n, nmodel, Xnull_, y, tr_, new_tr_mat, invS
     .Call(`_crctStepdown_confint_search`, start, b, n, nmodel, Xnull_, y, tr_, new_tr_mat, invS, family, family2, Z, type, nsteps, weight, alpha, verbose)
 }
 
+#' A very basic linear model solver
+#'
+#' Returns the OLS paramter estimates and fitted values. Used internally for quick
+#' fitting of null models.
+#'
+#' @param y_ A vector of outcome values
+#' @param X_ The design matrix of fixed effects
+#' @return A list with the parameter values and fitted values
+simpleLM <- function(y_, X_) {
+    .Call(`_crctStepdown_simpleLM`, y_, X_)
+}
+
