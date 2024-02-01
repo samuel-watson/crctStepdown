@@ -17,11 +17,12 @@ stepdown(
   rand_func = NULL,
   confint = TRUE,
   sigma = NULL,
+  ci_start_values = NULL,
   verbose = TRUE
 )
 }
 \arguments{
-\item{fitlist}{A list of models fitted with lme4. All models should be fit using the
+\item{fitlist}{A list of models fitted with lme4, base R (lm or glm), or glmmrBase. All models should be fit using the
 same data frame.}
 
 \item{tr_var}{String indicating the name of the column in data that is a binary indicator
@@ -56,18 +57,26 @@ the treatment group. If NULL then clusters are randomised in a 1:1 ratio to trea
 \item{sigma}{optional, list of estimated covariance matrices of the observations from the models in fitlist.
 If provided then the weighted q-score statistic is used.}
 
+\item{ci_start_values}{Optional list. The list should contain named vectors "upper" and/or "lower" that provide
+a set of starting values for the upper and/or lower confidence interval searches, respectively. Alternatively,
+a named scalar \code{scale} can be provided such that the starting values of the confidence interval search procedure
+are est +/- \code{scale}*SE.}
+
 \item{verbose}{Logical indicating whether to provide detailed output}
 }
 \value{
 A data frame with the point estimates, p-values, and confidence intervals
 }
 \description{
-For a set of models fit with lme4, the function will conduct the randomisation tests
+For a set of models fit with lme4, base R, or glmmrBase, the function will conduct the randomisation tests
 and generate p-values for the null hypotheses of no treatment effect that controls the
 family-wise error rate, and generates a 100(1-alpha)\% confidence set for the
 treatment effect model parameters.
 }
 \examples{
+\dontshow{
+setParallelCRT(FALSE) # for the CRAN check
+}
 out <- twoarm_sim()
 data <- out[[1]]
   fit1 <- lme4::glmer(y1 ~ treat + (1|cl) ,

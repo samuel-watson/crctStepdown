@@ -38,55 +38,72 @@ est_null_model <- function(fit,
                            data,
                            tr_var="treat",
                            null_par){
-  if(!(is(fit,"glmerMod")|is(fit,"lmerMod")|is(fit,"glm")|is(fit,"lm")))stop("fit should be glm, lm, glmer, or lmer model object")
+  if(!(is(fit,"glmerMod")|is(fit,"lmerMod")|is(fit,"glm")|is(fit,"lm")|is(fit,"mcml")))stop("fit should be glm, lm, glmer, lmer, or mcml model object")
   if(!is(data,"data.frame"))stop("Data should be a data frame")
   if(!tr_var%in%colnames(data))stop("tr_var not in colnames(data)")
 
-  if(is(fit,"glmerMod")){
-    fixeff <- names(lme4::fixef(fit))
-    family <- fit@resp$family
-  } else if(is(fit,"lmerMod")){
-    fixeff <- names(lme4::fixef(fit))
-    family <- stats::gaussian()
-  } else if(is(fit,"glm")){
-    fixeff <- names(coef(fit))
-    family <- stats::family(fit)
-  } else if(is(fit,"lm")){
-    fixeff <- names(coef(fit))
-    family <- stats::gaussian()
-  }
+  if(!is(fit,"mcml")){
+    if(is(fit,"glmerMod")){
+      fixeff <- names(lme4::fixef(fit))
+      family <- fit@resp$family
+    } else if(is(fit,"lmerMod")){
+      fixeff <- names(lme4::fixef(fit))
+      family <- stats::gaussian()
+    } else if(is(fit,"glm")){
+      fixeff <- names(coef(fit))
+      family <- stats::family(fit)
+    } else if(is(fit,"lm")){
+      fixeff <- names(coef(fit))
+      family <- stats::gaussian()
+    }
 
-  fixeff <- fixeff[!fixeff%in%c(tr_var,"(Intercept)")]
-  outv <- outname_fit(fit)
-  #call1 <- fit@call[[1]]
+    fixeff <- fixeff[!fixeff%in%c(tr_var,"(Intercept)")]
+    outv <- outname_fit(fit)
+    #call1 <- fit@call[[1]]
 
-  if(length(fixeff)==0){
-    form <- paste0(outv," ~ 1")
-  }
-  if(length(fixeff)==1){
-    form <- paste0(outv," ~ ",fixeff)
-  }
-  if(length(fixeff)>1){
-    form1 <- paste0(fixeff, sep=" + ", collapse = "")
-    form1 <- stringr::str_sub(form1,1,nchar(form1)-3)
-    form <- paste0(outv," ~ ",form1)
+    if(length(fixeff)==0){
+      form <- paste0(outv," ~ 1")
+    }
+    if(length(fixeff)==1){
+      form <- paste0(outv," ~ ",fixeff)
+    }
+    if(length(fixeff)>1){
+      form1 <- paste0(fixeff, sep=" + ", collapse = "")
+      form1 <- stringr::str_sub(form1,1,nchar(form1)-3)
+      form <- paste0(outv," ~ ",form1)
+    }
+    Y <- data[!is.na(data[,outv]),outv]
+  } else {
+    if(fit$family == "bernoulli"){
+      family <- stats::binomial()
+    } else {
+      family <- do.call(fit$family,list())
+    }
+    form1 <- fit$mean_form
+    form1 <-  gsub(tr_var,"",form1)
+    if(substr(form1,1,1) == "+")form1 <- substr(form1,2,nchar(form1))
+    form1 <-  gsub("\\+\\+","+",form1)
+    form1 <-  gsub("\\+\\-","-",form1)
+    form <- paste0("~",form1)
+    Y <- fit$y
+    outv <- "y"
   }
 
   off1 <- c(data[,tr_var]*null_par)
-
   X <- model.matrix(object=as.formula(form),data)
-  Y <- data[!is.na(data[,outv]),outv]
 
-  if(is(fit,"glmerMod")|is(fit,"glm")){
+  if(is(fit,"glmerMod")|is(fit,"glm")|(is(fit,"mcml")&&family[[1]]!="gaussian")){
     #family <- fit@call[[4]]
     if(all(off1==0)){
       f1 <- fastglm::fastglm(X,Y,family=family,method=3)
     } else {
       f1 <- fastglm::fastglm(X,Y,family=family,offset=off1,method=3)
     }
-  } else if(is(fit,"lmerMod")|is(fit,"lm")){
-    data[,outv] <- data[,outv]-off1
-    f1 <- RcppArmadillo::fastLm(X=X,y=Y)
+  } else {
+    #data[,outv] <- data[,outv]-off1
+    Y <- Y - off1
+    f1 <- simpleLM(y_=Y,X_=X)
+    f1$fitted.values <- drop(f1$fitted.values)
   }
 
   f1$outv <- outv

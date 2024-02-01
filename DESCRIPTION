@@ -1,6 +1,7 @@
 Package: crctStepdown
 Title: Univariate Analysis of Cluster Trials with Multiple Outcomes
-Version: 0.4.2
+Version: 0.5.1
+Date: 2023-09-12
 Authors@R: 
     person(given = "Sam",
            family = "Watson",
@@ -9,8 +10,7 @@ Authors@R:
            comment = c(ORCID = "0000-0002-8972-769X"))
 Description: Frequentist statistical inference for cluster randomised trials with
   multiple outcomes that controls the family-wise error rate and provides nominal
-  coverage of confidence sets. A full description of the methods can be found
-  in Watson et al. (2021) <arXiv:2107.10017>.
+  coverage of confidence sets. A full description of the methods can be found in Watson et al. (2023) <doi:10.1002/sim.9831>.
 License: CC BY-SA 4.0 
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -23,13 +23,13 @@ LinkingTo:
 Imports:
   fastglm,
   Rcpp,
-  rlang,
   ggplot2,
   ggpubr,
   methods,
   stringr,
-  lme4
+  lme4,
+  reshape2
 Depends: 
-    R (>= 2.10)
+    R (>= 3.0.2)
 Suggests: 
     testthat
