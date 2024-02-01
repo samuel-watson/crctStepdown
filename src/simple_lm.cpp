@@ -16,7 +16,7 @@ Rcpp::List simpleLM(SEXP y_,
                     SEXP X_){
   Eigen::MatrixXd X = as<Eigen::MatrixXd>(X_);
   Eigen::VectorXd y = as<Eigen::VectorXd>(y_);
-  Eigen::VectorXd XtX = X.transpose() * X;
+  Eigen::MatrixXd XtX = X.transpose() * X;
   XtX = XtX.llt().solve(Eigen::MatrixXd::Identity(X.cols(),X.cols()));
   Eigen::VectorXd beta = XtX * X.transpose() * y;
   Eigen::VectorXd fitted = X * beta;
